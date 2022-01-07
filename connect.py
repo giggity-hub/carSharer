@@ -3,6 +3,7 @@ import os
 import csv
 import re
 
+
 def csv_reader(path):
     with open(path, "r") as csvfile:
         tmp = {}
@@ -11,12 +12,14 @@ def csv_reader(path):
             tmp[line[0]] = line[1]
     return tmp
 
+
 config = csv_reader("properties.settings")
 
 rechnername = config["rechnername"]
 username = config["username"]
 password = config["password"]
 database = config["database"]
+
 
 class DBUtil:
 
@@ -58,7 +61,7 @@ class DBUtil:
                                           rechnername=rechnername,
                                           gruppennummer=re.match(r"([a-z]+)([0-9]+)", username, re.I).groups()[1],
                                           database=database
-                                          #user=username.strip()
+                                          # user=username.strip()
                                       ),
                                       {
                                           'user': username,
@@ -100,3 +103,8 @@ class DBUtil:
             conn.close()
 
         return exists
+
+
+if __name__ == "__main__":
+    conn = DBUtil().getExternalConnection()
+    print(conn)
