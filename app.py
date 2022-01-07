@@ -79,7 +79,6 @@ def addUser():
 
 
 if __name__ == "__main__":
-    # port = int("9" + re.match(r"([a-z]+)([0-9]+)", config["username"], re.I).groups()[1])
-    port = 80
+    port = int("9" + re.match(r"([a-z]+)([0-9]+)", config["username"], re.I).groups()[1])
     host = 'localhost'
     app.run(host=host, port=port, debug=True)
