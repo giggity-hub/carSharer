@@ -31,6 +31,11 @@ def csv_reader(path):
 
 config = csv_reader("properties.settings")
 
+@app.route('/view_drive/<fahrt_id>', methods=['GET'])
+def view_driveGet(fahrt_id):
+    # gette die fahrt zur id und render die in nem passenden template
+    return fahrt_id
+
 
 @app.route('/view_main', methods=['GET'])
 def view_mainGet():
@@ -62,12 +67,13 @@ def helloGet():
 def helloPost():
     firstname = request.form.get('firstname')
     lastname = request.form.get('lastname')
+    return f"{firstname}, {lastname}"
 
-    if firstname is not None and lastname is not None and firstname and lastname:
-        with threading.Lock():
-            userList.append(user.User(firstname, lastname))
+    # if firstname is not None and lastname is not None and firstname and lastname:
+    #     with threading.Lock():
+    #         userList.append(user.User(firstname, lastname))
 
-    return render_template('hello.html', users=userList)
+    # return render_template('hello.html', users=userList)
 
 
 @app.route('/carSharer', methods=['GET'])
