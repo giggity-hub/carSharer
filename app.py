@@ -1,11 +1,15 @@
 from flask import Flask, request, render_template
 import user
 import connect
-import userStore
+# from connect import DBUtil
+from userStore import UserStore
+# import userStore
 import threading
 import csv
 import re
+from currentUser import CurrentUser
 
+current_user = CurrentUser()
 app = Flask(__name__, template_folder='template')
 
 userList = []
@@ -26,6 +30,26 @@ def csv_reader(path):
 
 
 config = csv_reader("properties.settings")
+
+
+@app.route('/view_main', methods=['GET'])
+def view_mainGet():
+    conn = connect.DBUtil().getExternalConnection()
+    curs = conn.cursor()
+    # Reservierte Fahrten
+    curs.execute(f"select * from fahrt where fid in (select fahrt from reservieren where kunde='{current_user.getID()}')")
+    reservierte_fahrten =  curs.fetchall()
+    
+    # Offene Fahrten
+    curs.execute(f"select * from fahrt where status='offen'")
+    offene_fahrten = curs.fetchall()
+    print(f"{reservierte_fahrten=}, {offene_fahrten=}")
+    return render_template('index.html', 
+        reservierte_fahrten=reservierte_fahrten, 
+        offene_fahrten=offene_fahrten
+    )
+    #1.) alle vom nutzer reservierten fahrten getten
+    # 2.) alle noch freien fahrten getten
 
 
 @app.route('/hello', methods=['GET'])
@@ -62,12 +86,17 @@ def carShare():
 
 @app.route('/addUser', methods=['GET'])
 def addUser():
+    userSt = UserStore()
     try:
-        userSt = userStore.UserStore()
+        # userSt = {}
+        
         userToAdd = user.User("Max", "Mustermann")
-        userSt.addUser(userToAdd)
-        userSt.completion()
+        moped = userSt.addUser(userToAdd)
+        print(moped)
+        # userSt.addUser(userToAdd)
+        # userSt.completion()
 
+        return "saaaaaaaas"
         # ...
         # mach noch mehr!
     except Exception as e:
