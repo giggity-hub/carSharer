@@ -10,7 +10,7 @@ import re
 from currentUser import CurrentUser
 
 current_user = CurrentUser()
-app = Flask(__name__, template_folder='template')
+app = Flask(__name__, template_folder='template', static_url_path='/pfad')
 
 userList = []
 userList.append(user.User("Bill", "Gates"))
@@ -42,11 +42,18 @@ def view_mainGet():
     conn = connect.DBUtil().getExternalConnection()
     curs = conn.cursor()
     # Reservierte Fahrten
-    curs.execute(f"select * from fahrt where fid in (select fahrt from reservieren where kunde='{current_user.getID()}')")
+    curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, f.status 
+                        from fahrt f, transportmittel t
+                        where f.fid in (select fahrt from reservieren where kunde='{current_user.getID()}') and t.tid = f.transportmittel""")
     reservierte_fahrten =  curs.fetchall()
     
     # Offene Fahrten
-    curs.execute(f"select * from fahrt where status='offen'")
+    curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
+                    from fahrt f, transportmittel t, (select f.fid, SUM(r.anzPlaetze) as belegtePlaetze 
+                        from fahrt f, reservieren r
+                        WHERE r.fahrt = f.fid
+                        GROUP BY fid) tmp
+                    where tmp.fid = f.fid and t.tid = f.transportmittel""")
     offene_fahrten = curs.fetchall()
     print(f"{reservierte_fahrten=}, {offene_fahrten=}")
     return render_template('index.html', 
