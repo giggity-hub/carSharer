@@ -6,7 +6,6 @@ import threading
 import csv
 import re
 
-
 app = Flask(__name__, template_folder='template')
 
 userList = []
@@ -16,6 +15,7 @@ userList.append(user.User("Larry", "Page"))
 userList.append(user.User("Sergey", "Brin"))
 userList.append(user.User("Larry", "Ellison"))
 
+
 def csv_reader(path):
     with open(path, "r") as csvfile:
         tmp = {}
@@ -24,9 +24,12 @@ def csv_reader(path):
             tmp[line[0]] = line[1]
     return tmp
 
+
 config = csv_reader("properties.settings")
 
+
 @app.route('/hello', methods=['GET'])
+@app.route("/", methods=["GET"])
 def helloGet():
     return render_template('hello.html', users=userList)
 
@@ -45,7 +48,6 @@ def helloPost():
 
 @app.route('/carSharer', methods=['GET'])
 def carShare():
-
     try:
         dbExists = connect.DBUtil().checkDatabaseExistsExternal()
         if dbExists:
@@ -56,6 +58,7 @@ def carShare():
         print(e)
 
     return render_template('carSharer.html', db2exists=db2exists)
+
 
 @app.route('/addUser', methods=['GET'])
 def addUser():
