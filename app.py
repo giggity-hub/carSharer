@@ -146,7 +146,6 @@ def new_drive_post():
     else:
         beschreibung = "'" + beschreibung + "'"
 
-
     # Error handling
     if not maxPlaetze.isnumeric():
         flash("Anzahl an Plätzen muss eine positive Zahl sein", "error")
@@ -179,11 +178,52 @@ def new_drive_post():
 
     except Exception as e:
         print(e)
-        flash("Allgemein Fehler mit der Datenbank.","error")
+        flash("Allgemein Fehler mit der Datenbank.", "error")
         return redirect(url_for("new_drive_get"))
 
     flash("Die Fahrt wurde erfolgreich hinzugefügt", "info")
     return redirect(url_for("view_mainGet"))
+
+
+@app.route("/new_rating/<fahrt_id>", methods=["GET"])
+def new_rating_get(fahrt_id):
+    return render_template("new_rating.html")
+
+
+@app.route("/new_rating/<fahrt_id>", methods=["POST"])
+def new_rating_post(fahrt_id):
+    bewertung = request.form.get("Bewertung")
+    rating = request.form.get("rating")
+
+    # Error Handling
+    if not bewertung:
+        flash("Die Bewertung darf nicht leer sein!", "error")
+        return redirect("/view_drive/" + str(fahrt_id))
+
+    try:
+        conn = connect.DBUtil().getExternalConnection()
+        curs = conn.cursor()
+        # check ob der User die Fahrt schon bewertet hat:
+        curs.execute(f"""   select BENUTZER,FAHRT 
+                            from SCHREIBEN
+                            where BENUTZER = {current_user.getID()} and FAHRT= {fahrt_id}""")
+        bewertung_already_exists = curs.fetchall()
+
+        if not bewertung_already_exists:
+            # !!! Bewertung wird erstellt aber SCHREIBEN wird noch nicht aktualisiert !!!!
+            print(curs.execute(f""" INSERT INTO bewertung (textnachricht, erstellungsdatum, rating) VALUES
+                                    ('{bewertung}',CURRENT TIMESTAMP,{rating})"""))
+
+        else:
+            flash("Sie haben für diese Fahrt bereits eine Bewertung abgegeben", "error")
+            return redirect("/view_drive/" + str(fahrt_id))
+
+    except Exception as e:
+        print(e)
+        return redirect("/view_drive/" + str(fahrt_id))
+
+    flash("Die Bewertung wurde erfolgreich hinzugefügt")
+    return redirect("/view_drive/" + str(fahrt_id))
 
 
 if __name__ == "__main__":
