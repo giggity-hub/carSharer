@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for, flash
 import user
 import connect
 # from connect import DBUtil
@@ -8,9 +8,11 @@ import threading
 import csv
 import re
 from currentUser import CurrentUser
+import date_time_util
 
 current_user = CurrentUser()
 app = Flask(__name__, template_folder='template', static_url_path='/pfad')
+app.secret_key = "superSecretKey"
 
 userList = []
 userList.append(user.User("Bill", "Gates"))
@@ -31,6 +33,7 @@ def csv_reader(path):
 
 config = csv_reader("properties.settings")
 
+
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
     # gette die fahrt zur id und render die in nem passenden template
@@ -45,8 +48,8 @@ def view_mainGet():
     curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, f.status 
                         from fahrt f, transportmittel t
                         where f.fid in (select fahrt from reservieren where kunde='{current_user.getID()}') and t.tid = f.transportmittel""")
-    reservierte_fahrten =  curs.fetchall()
-    
+    reservierte_fahrten = curs.fetchall()
+
     # Offene Fahrten
     curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
                     from fahrt f, transportmittel t, (select f.fid, SUM(r.anzPlaetze) as belegtePlaetze 
@@ -56,11 +59,11 @@ def view_mainGet():
                     where tmp.fid = f.fid and t.tid = f.transportmittel""")
     offene_fahrten = curs.fetchall()
     print(f"{reservierte_fahrten=}, {offene_fahrten=}")
-    return render_template('index.html', 
-        reservierte_fahrten=reservierte_fahrten, 
-        offene_fahrten=offene_fahrten
-    )
-    #1.) alle vom nutzer reservierten fahrten getten
+    return render_template('index.html',
+                           reservierte_fahrten=reservierte_fahrten,
+                           offene_fahrten=offene_fahrten
+                           )
+    # 1.) alle vom nutzer reservierten fahrten getten
     # 2.) alle noch freien fahrten getten
 
 
@@ -102,7 +105,7 @@ def addUser():
     userSt = UserStore()
     try:
         # userSt = {}
-        
+
         userToAdd = user.User("Max", "Mustermann")
         moped = userSt.addUser(userToAdd)
         print(moped)
@@ -118,6 +121,69 @@ def addUser():
     finally:
         userSt.close()
 
+
+@app.route("/new_drive", methods=["GET"])
+def new_drive_get():
+    conn = connect.DBUtil().getExternalConnection()
+    curs = conn.cursor()
+    curs.execute("""SELECT tid, name FROM transportmittel""")
+    transportmittel = curs.fetchall()
+    return render_template("new_drive.html", transportmittel=transportmittel)
+
+
+@app.route("/new_drive", methods=["POST"])
+def new_drive_post():
+    startort = request.form["Startort"]
+    zielort = request.form["Zielort"]
+    maxPlaetze = request.form["maxPlaetze"]
+    kosten = request.form["Kosten"]
+    transportmittel = request.form["Transportmittel"]
+    datum = request.form["Fahrtdatum"]
+    zeit = request.form["time"]
+    beschreibung = request.form["Beschreibung"]
+    if not beschreibung:
+        beschreibung = "NULL"
+    else:
+        beschreibung = "'" + beschreibung + "'"
+
+
+    # Error handling
+    if not maxPlaetze.isnumeric():
+        flash("Anzahl an Plätzen muss eine positive Zahl sein", "error")
+        return redirect(url_for("new_drive_get"))
+
+    if int(maxPlaetze) >= 0 and int(maxPlaetze) > 10:
+        flash("Die Anzahl an Plätzen darf maximal 10 betragen", "error")
+        return redirect(url_for("new_drive_get"))
+
+    if not kosten.isnumeric():
+        flash("Die Fahrtkosten müssen eine positive Ganzzahl sein", "error")
+        return redirect(url_for("new_drive_get"))
+
+    if not date_time_util.check_date_validity(datum):
+        flash("Das eingegebene Datum liegt in der Vergangenheit.", "error")
+        return redirect(url_for("new_drive_get"))
+
+    if len(beschreibung) > 50:
+        flash("Die Länge der Beschreibung darf maximal 50 Zeichen lang sein", "error")
+        return redirect(url_for("new_drive_get"))
+
+    try:
+        # Fahrt zu DB hinzufügen
+        conn = connect.DBUtil().getExternalConnection()
+        curs = conn.cursor()
+        curs.execute(f"""INSERT INTO fahrt (startort, zielort, fahrtdatumzeit, maxPlaetze,
+                                            fahrtkosten, anbieter, transportmittel, beschreibung)  VALUES 
+                                ('{startort}', '{zielort}', '{date_time_util.html_date_time_2_DB2DateTime(datum, zeit)}', {maxPlaetze},
+                                 {kosten}, {current_user.getID()}, {transportmittel}, {beschreibung} )""")
+
+    except Exception as e:
+        print(e)
+        flash("Allgemein Fehler mit der Datenbank.","error")
+        return redirect(url_for("new_drive_get"))
+
+    flash("Die Fahrt wurde erfolgreich hinzugefügt", "info")
+    return redirect(url_for("view_mainGet"))
 
 
 if __name__ == "__main__":
