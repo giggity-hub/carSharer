@@ -203,16 +203,21 @@ def new_rating_post(fahrt_id):
     try:
         conn = connect.DBUtil().getExternalConnection()
         curs = conn.cursor()
-        # check ob der User die Fahrt schon bewertet hat:
+        # checken ob der User die Fahrt schon bewertet hat:
         curs.execute(f"""   select BENUTZER,FAHRT 
                             from SCHREIBEN
                             where BENUTZER = {current_user.getID()} and FAHRT= {fahrt_id}""")
         bewertung_already_exists = curs.fetchall()
 
         if not bewertung_already_exists:
-            # !!! Bewertung wird erstellt aber SCHREIBEN wird noch nicht aktualisiert !!!!
-            print(curs.execute(f""" INSERT INTO bewertung (textnachricht, erstellungsdatum, rating) VALUES
-                                    ('{bewertung}',CURRENT TIMESTAMP,{rating})"""))
+            # Bewertung hinzufügen:
+            curs.execute(f""" Select BEID from new table(INSERT INTO bewertung (textnachricht, erstellungsdatum, rating) VALUES
+                                    ('{bewertung}',CURRENT TIMESTAMP,{rating}))""")
+            bewertung_id = curs.fetchall()[0][0]
+
+            # Bewertung zu SCHREIBEN hinzufügen
+            curs.execute(f"""   Insert INTO SCHREIBEN (BENUTZER, FAHRT, BEWERTUNG) VALUES 
+                                ({current_user.getID()},{fahrt_id},{bewertung_id})""")
 
         else:
             flash("Sie haben für diese Fahrt bereits eine Bewertung abgegeben", "error")
