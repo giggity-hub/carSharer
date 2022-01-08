@@ -1,3 +1,4 @@
+from logging import log
 from flask import Flask, request, render_template
 import user
 import connect
@@ -28,8 +29,31 @@ def csv_reader(path):
             tmp[line[0]] = line[1]
     return tmp
 
-
 config = csv_reader("properties.settings")
+
+@app.route('/new_rating/<fahrt_id>', methods=['GET'])
+def new_ratingGet(fahrt_id):
+    print(fahrt_id)
+    conn = connect.DBUtil().getExternalConnection()
+    curs = conn.cursor()
+    curs.execute(f"select * from fahrt where fid={fahrt_id}")
+    fahrt = curs.fetchone()
+    print(fahrt)
+    return render_template('new_rating.html', fahrt=fahrt)
+
+@app.route('/new_rating/<fahrt_id>', methods=['POST'])
+def new_ratingPost(fahrt_id):
+    textnachricht = request.form.get('bewertungstext')
+    rating = request.form.get('rating')
+
+    conn = connect.DBUtil().getExternalConnection()
+    curs = conn.cursor()
+
+    curs.execute(f"""SELECT * FROM FINAL TABLE (INSERT INTO bewertung (textnachricht, rating) VALUES ('{textnachricht}', {rating})) """)
+    m = curs.fetchone()
+    # m = curs.execute(f"INSERT INTO bewertung (textnachricht, rating) VALUES ('{textnachricht}', {rating})")
+    print(f"{m=}")
+    return f"{textnachricht}, {rating}"
 
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
