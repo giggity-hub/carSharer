@@ -222,7 +222,7 @@ def new_rating_post(fahrt_id):
         print(e)
         return redirect("/view_drive/" + str(fahrt_id))
 
-    flash("Die Bewertung wurde erfolgreich hinzugefügt")
+    flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
     return redirect("/view_drive/" + str(fahrt_id))
 
 
