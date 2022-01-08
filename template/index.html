@@ -7,64 +7,64 @@
     <h1>Meine reserviersdsdff</h1>
 
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for fahrt in reservierte_fahrten %}
-        <div class="col">
-            <div class="card">
-                <a href="/view_drive/{{fahrt[0]}}">
-                    <img src={{fahrt[1]}} class="card-img-top">
-                </a>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Von</div>
-                        <div>{{fahrt[2]}}</div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Nach</div>
-                        <div>{{fahrt[3]}}</div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Status</div>
-                        <div>{{fahrt[4]}}</div>
-                    </li>
-                </ul>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for fahrt in reservierte_fahrten %}
+            <div class="col">
+                <div class="card">
+                    <a href="/view_drive/{{ fahrt[0] }}">
+                        <img src={{ fahrt[1] }} class="card-img-top">
+                    </a>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Von</div>
+                            <div>{{ fahrt[2] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Nach</div>
+                            <div>{{ fahrt[3] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Status</div>
+                            <div>{{ fahrt[4] }}</div>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
 
-</div>
+    </div>
 
-<h1>Offene Fahrten</h1>
+    <h1>Offene Fahrten</h1>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for fahrt in offene_fahrten %}
-        <div class="col">
-            <div class="card">
-                <a href="/view_drive/{{fahrt[0]}}">
-                    <img src={{fahrt[1]}} class="card-img-top">
-                </a>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Von</div>
-                        <div>{{fahrt[2]}}</div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Nach</div>
-                        <div>{{fahrt[3]}}</div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Freie Plätze</div>
-                        <div>{{fahrt[4]}}</div>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <div>Fahrtkosten</div>
-                        <div>{{fahrt[5]}}</div>
-                    </li>
-                </ul>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for fahrt in offene_fahrten %}
+            <div class="col">
+                <div class="card">
+                    <a href="/view_drive/{{ fahrt[0] }}">
+                        <img src={{ fahrt[1] }} class="card-img-top">
+                    </a>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Von</div>
+                            <div>{{ fahrt[2] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Nach</div>
+                            <div>{{ fahrt[3] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Freie Plätze</div>
+                            <div>{{ fahrt[4] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Fahrtkosten</div>
+                            <div>{{ fahrt[5] }}</div>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    {% endfor %}
-</div>
-    
+        {% endfor %}
+    </div>
+
 {% endblock %}
 

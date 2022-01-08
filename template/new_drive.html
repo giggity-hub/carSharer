@@ -1,57 +1,90 @@
 {% extends 'base.html' %}
 
+{% block title %}Fahrt erstellen{% endblock %}
+
+
 {% block content %}
-    <form action="new_drive" method="post">
-        <div class="input-group mb-3">
-          <span class="input-group-text" id="Startort">Startort</span>
-          <input type="text" class="form-control" placeholder="Startort" aria-label="Startort" aria-describedby="basic-addon1" name="Startort">
-        </div>
 
-        <div class="input-group mb-3">
-          <span class="input-group-text" id="Zielort">Zielort</span>
-          <input type="text" class="form-control" placeholder="Zielort" aria-label="Zielort" aria-describedby="basic-addon1" name="Zielort">
-        </div>
+    <style>
+        @media (min-width: 550px)
+        .bd-wrapper{
+            padding: 1.5rem;
+            margin-right: 0;
+            margin-left: 0;
+            border-width: 1px;
+            border-top-left-radius: 0.25rem;
+            border-top-right-radius: 0.25rem;
+        }
 
-        <div class="input-group mb-3">
-          <input type="text" class="form-control" placeholder="30" aria-label="maxPlaetze" aria-describedby="basic-addon2" name="maxPlaetze">
-            <span class="input-group-text" id="maxPlaetze">Anzahl maximaler Plätze</span>
-        </div>
 
-        <div class="input-group mb-3">
-          <input type="text" class="form-control" placeholder="5" aria-label="Kosten" aria-describedby="basic-addon2" name="Kosten">
-            <span class="input-group-text" id="Kosten">Kosten</span>
-        </div>
+        .bd-wrapper {
+            position: relative;
+            padding: 1rem;
+            margin: 1rem -0.75rem 0;
+            border: solid #dee2e6;
+            border-width: 1px 0 0;
+        }
+    </style>
 
-        {% for t in transportmittel %}
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="Transportmittel" id="{{ t[1] }}" checked value="{{ t[0] }}">
-              <label class="form-check-label" for="{{ t[1] }}">
-                  {{ t[1] }}
-              </label>
+    <div class="mt-3 border bd-wrapper">
+        <form action="new_drive" method="post" >
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="Startort">Startort</span>
+                <input type="text" class="form-control" placeholder="Startort" aria-label="Startort"
+                       aria-describedby="basic-addon1" name="Startort">
             </div>
-        {% endfor %}
 
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="Zielort">Zielort</span>
+                <input type="text" class="form-control" placeholder="Zielort" aria-label="Zielort"
+                       aria-describedby="basic-addon1" name="Zielort">
+            </div>
 
-        <div class="input-group mb-3">
-          <span class="input-group-text" id="Fahrtdatum">Fahrtdatum</span>
-          <input type="date" class="form-control" placeholder="Fahrtdatum" aria-label="Fahrtdatum" aria-describedby="basic-addon1" name="Fahrtdatum">
-        </div>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="30" aria-label="maxPlaetze"
+                       aria-describedby="basic-addon2" name="maxPlaetze">
+                <span class="input-group-text" id="maxPlaetze">Anzahl maximaler Plätze</span>
+            </div>
 
-        <div class="input-group">
-        <select class="form-select form-select-sm" aria-label=".form-select-sm example" name="time">
-            <option selected> Uhrzeit </option>
-            {% for i in range(24)  %}
-                <option value="{{ i|string + ":00"  }}">{{ i }}:00</option>
-                <option value="{{ i|string + ":30" }}">{{ i }}:30</option>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="5" aria-label="Kosten" aria-describedby="basic-addon2"
+                       name="Kosten">
+                <span class="input-group-text" id="Kosten">Kosten</span>
+            </div>
+
+            {% for t in transportmittel %}
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="Transportmittel" id="{{ t[1] }}" checked
+                           value="{{ t[0] }}">
+                    <label class="form-check-label" for="{{ t[1] }}">
+                        {{ t[1] }}
+                    </label>
+                </div>
             {% endfor %}
-        </select>
-        </div>
 
-        <div class="input-group">
-          <span class="input-group-text">Beschreibung</span>
-          <textarea class="form-control" aria-label="Beschreibung" name="Beschreibung"></textarea>
-        </div>
 
-        <input class="btn btn-primary" type = "submit" value = "submit" />
-    </form>
+            <div class="input-group mb-3 mt-3">
+                <span class="input-group-text" id="Fahrtdatum">Fahrtdatum</span>
+                <input type="date" class="form-control" placeholder="Fahrtdatum" aria-label="Fahrtdatum"
+                       aria-describedby="basic-addon1" name="Fahrtdatum">
+            </div>
+
+            <div class="input-group">
+                <select class="form-select form-select-sm mb-3" aria-label=".form-select-sm example" name="time">
+                    <option selected> Uhrzeit</option>
+                    {% for i in range(24) %}
+                        <option value="{{ i|string + ":00" }}">{{ i }}:00</option>
+                        <option value="{{ i|string + ":30" }}">{{ i }}:30</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text">Beschreibung</span>
+                <textarea class="form-control" aria-label="Beschreibung" name="Beschreibung"></textarea>
+            </div>
+
+            <input class="btn btn-primary" type="submit" value="submit"/>
+        </form>
+    </div>
 {% endblock %}
