@@ -11,9 +11,7 @@ from currentUser import CurrentUser
 import date_time_util
 from app import app
 
-
 current_user = CurrentUser()
-
 
 userList = []
 userList.append(user.User("Bill", "Gates"))
@@ -31,6 +29,7 @@ def csv_reader(path):
             tmp[line[0]] = line[1]
     return tmp
 
+
 config = csv_reader("properties.settings")
 
 
@@ -38,6 +37,7 @@ config = csv_reader("properties.settings")
 def view_driveGet(fahrt_id):
     # gette die fahrt zur id und render die in nem passenden template
     return fahrt_id
+
 
 @app.route("/", methods=["GET"])
 @app.route('/view_main', methods=['GET'])
@@ -52,11 +52,10 @@ def view_mainGet():
 
     # Offene Fahrten
     curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
-                    from fahrt f, transportmittel t, (select f.fid, SUM(r.anzPlaetze) as belegtePlaetze 
-                        from fahrt f, reservieren r
-                        WHERE r.fahrt = f.fid
-                        GROUP BY fid) tmp
-                    where tmp.fid = f.fid and t.tid = f.transportmittel""")
+                    from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
+                                                        from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
+                                                        GROUP BY FID) tmp
+                    where tmp.fid = f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""")
     offene_fahrten = curs.fetchall()
     print(f"{reservierte_fahrten=}, {offene_fahrten=}")
     return render_template('index.html',
@@ -228,6 +227,33 @@ def new_rating_post(fahrt_id):
 
     flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
     return redirect("/view_drive/" + str(fahrt_id))
+
+
+@app.route("/view_search", methods=["GET"])
+def view_search_get():
+    return render_template("view_search.html")
+
+
+@app.route("/view_search", methods=["POST"])
+def view_search_post():
+    start = request.form.get("Start").upper()
+    ziel = request.form.get("Ziel").upper()
+    datum = request.form.get("Datum")
+
+    # Startort, Zielort, Fahrtkosten und Icon holen:
+    conn = connect.DBUtil().getExternalConnection()
+    curr = conn.cursor()
+    curr.execute(f"""   SELECT f.FID, f.STARTORT, f.ZIELORT,f.FAHRTKOSTEN, t.ICON
+                        from TRANSPORTMITTEL t, (Select STARTORT, ZIELORT, FAHRTKOSTEN, TRANSPORTMITTEL, FID
+                                                from FAHRT
+                                                WHERE STATUS = 'offen'
+                                                  and upper(STARTORT) like '%{start}%'
+                                                  and upper(ZIELORT) like '%{ziel}%'
+                                                  and FAHRTDATUMZEIT >= '{date_time_util.html_date_2_DB2DateTime(datum)}') f
+                        where f.TRANSPORTMITTEL = t.TID""")
+    fahrten = curr.fetchall()
+
+    return render_template("view_search.html", fahrten=fahrten)
 
 
 if __name__ == "__main__":

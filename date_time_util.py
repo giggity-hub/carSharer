@@ -66,6 +66,15 @@ def html_date_time_2_DB2DateTime(html_date, time):
 
     return datetimeStr
 
+def html_date_2_DB2DateTime(html_date):
+    datetime_str = None
+    try:
+        parsed_date = datetime.strptime(html_date, "%Y-%m-%d")
+        datetime_str = parsed_date.strftime("%Y-%m-%d %H:%M:%S.%f")
+    except Exception as e:
+        print(e)
+    return datetime_str
+
 def check_date_validity(d):
     parsed_date = datetime.strptime(d, "%Y-%m-%d").date()
     today = date.today()
@@ -79,3 +88,5 @@ if __name__ == "__main__":
     print(convertDateAndTimeToDB2DateTime("15.04.2022", "12:15"))
     print(html_date_time_2_DB2DateTime("2022-01-07","10:30"))
     print(check_date_validity("2022-01-06"))
+    print(html_date_2_DB2DateTime("2022-01-06"))
+

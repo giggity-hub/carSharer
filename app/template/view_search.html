@@ -1,18 +1,61 @@
-{% extends base.html %}
+{% extends 'base.html' %}
 
 {% block title %}Fahrt Suchen{% endblock %}
 
 
 
 {% block content %}
-    <form class="row g-3 needs-validation" novalidate>
-
+    <form class="row g-3 needs-validation" method="post" novalidate>
+        <div class="col-md-6">
+            <label for="Start" class="form-label">Start:</label>
+            <input type="text" class="form-control" id="Start" placeholder="Essen" name="Start" required>
+        </div>
+        <div class="col-md-6">
+            <label for="Start" class="form-label">Ziel:</label>
+            <input type="text" class="form-control" id="Start" placeholder="Duisburg" name="Ziel" required>
+        </div>
+        <div class="col-md-6">
+            <label for="Datum" class="form-label">ab:</label>
+            <input type="date" class="form-control" id="Datum" name="Datum" required>
+        </div>
+        <div class="col-12">
+            <button class="btn btn-primary" type="submit" id="submit">Suchen</button>
+        </div>
     </form>
 
+    {% if fahrten == [] %}
+        keine Suchanfragen gefunden
+    {% elif fahrten %}
+        <h1>Suchergebnisse</h1>
 
 
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for fahrt in fahrten %}
+                <div class="col">
+                    <div class="card">
+                        <a href="/view_drive/{{ fahrt[0] }}">
+                            <img src={{ fahrt[4] }} class="card-img-top">
+                        </a>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <div>Von</div>
+                                <div>{{ fahrt[1] }}</div>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <div>Nach</div>
+                                <div>{{ fahrt[2] }}</div>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <div>Fahrtkosten</div>
+                                <div>{{ fahrt[3] }}€</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
 
 
-
+    {% endif %}
 
 {% endblock %}
