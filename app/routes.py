@@ -37,7 +37,13 @@ config = csv_reader("properties.settings")
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
     # gette die fahrt zur id und render die in nem passenden template
-    return fahrt_id
+    conn = connect.DBUtil().getExternalConnection()
+    curs = conn.cursor()
+
+    curs.execute(f"select * from fahrt where fid='{fahrt_id}'") 
+    fahrt = curs.fetchone()
+    print(f"{fahrt=}")
+    return render_template('view_drive.html', fahrt=fahrt)
 
 
 @app.route("/", methods=["GET"])
