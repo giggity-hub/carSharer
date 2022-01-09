@@ -58,8 +58,7 @@ def view_mainGet():
                                                         GROUP BY FID) tmp
                     where tmp.fid = f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""")
     offene_fahrten = curs.fetchall()
-    print(f"{reservierte_fahrten=}, {offene_fahrten=}")
-    return render_template('index.html',
+    return render_template('view_main.html',
                            reservierte_fahrten=reservierte_fahrten,
                            offene_fahrten=offene_fahrten
                            )
