@@ -1,3 +1,4 @@
+from datetime import date
 from flask import Flask, request, render_template, redirect, url_for, flash
 import user
 import connect
@@ -128,7 +129,8 @@ def new_drive_get():
     curs = conn.cursor()
     curs.execute("""SELECT tid, name FROM transportmittel""")
     transportmittel = curs.fetchall()
-    return render_template("new_drive.html", transportmittel=transportmittel)
+    today = date.today()
+    return render_template("new_drive.html", transportmittel=transportmittel, today=today)
 
 
 @app.route("/new_drive", methods=["POST"])
