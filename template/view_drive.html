@@ -1,8 +1,76 @@
+
+
 {% extends 'base.html' %}
 
+{% block title %}Informationen{% endblock %}
+
 {% block content %}
+<div class ="container">
+    <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Anbieter:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">lul woher kommt die E-Mail</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Fahrtdatum und -uhrzeit:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[3]}}</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Von:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[1]}}</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Nach:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[2]}}</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Anzahl freier Plätze:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[1]}}</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Fahrtkosten:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[5]}}</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Status:</label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[6]}}</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="col-md-6">
+            <label for="" class="form-label">Beschreibung: </label>
+        </div>
+        <div class="col-md-6">
+            <label for="" class="form-label">{{ fahrt[9]}}</label>
+        </div>
+    </div>
 
-    <h1>Das ist die angezeigte Fahrt</h1>
-
+    {{fahrt}}
+</div>
 {% endblock %}
-
