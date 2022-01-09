@@ -25,7 +25,9 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
                             <div>Status</div>
-                            <div>{{ fahrt[4] }}</div>
+                            <span class="badge rounded-pill {{ 'bg-success' if fahrt[4] == 'offen' else 'bg-secondary' }}">
+                                {{ fahrt[4] }}
+                            </span>
                         </li>
                     </ul>
                 </div>
