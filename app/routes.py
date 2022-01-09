@@ -9,10 +9,11 @@ import csv
 import re
 from currentUser import CurrentUser
 import date_time_util
+from app import app
+
 
 current_user = CurrentUser()
-app = Flask(__name__, template_folder='template', static_url_path='/pfad')
-app.secret_key = "superSecretKey"
+
 
 userList = []
 userList.append(user.User("Bill", "Gates"))
