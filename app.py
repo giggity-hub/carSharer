@@ -39,7 +39,7 @@ def view_driveGet(fahrt_id):
     # gette die fahrt zur id und render die in nem passenden template
     return fahrt_id
 
-
+@app.route("/", methods=["GET"])
 @app.route('/view_main', methods=['GET'])
 def view_mainGet():
     conn = connect.DBUtil().getExternalConnection()
@@ -68,7 +68,6 @@ def view_mainGet():
 
 
 @app.route('/hello', methods=['GET'])
-@app.route("/", methods=["GET"])
 def helloGet():
     return render_template('hello.html', users=userList)
 
