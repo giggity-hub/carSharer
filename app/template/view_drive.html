@@ -54,7 +54,7 @@
                 <label for="" class="form-label">Fahrtkosten:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[5]}}</label>
+                <label for="" class="form-label">{{fahrt[5]}}</label>
             </div>
         </div>
             <div class="row">
@@ -79,16 +79,26 @@
     <hr style="border-color: green;">
     <div class = "row">
         <h1>Aktionsleiste</h1>
-        <div class="col-md-8">
-            Anzahl Plätze für Reservierung
+        <div class="col-md-5">
+            <label for="" class="form-label">Anzahl Plätze für Reservierung</label>
+            <select class="form-select" aria-label=".form-select-sm example" name="Anzahl_Plaetze" required>
+                <option value=1>1</option>
+                <option value=2>2</option>
+            </select>
+
         </div>
         <div class="col-auto me-auto">
 
         </div>
         <div class="col-auto">
             <div class="d-grid gap-2">
-              <a href="/view_drive/{{ fahrt[0] }}" class="btn btn-primary" role="button">Fahrt reservieren</a>
-              <a href="/view_drive/{{ fahrt[0] }}" class="btn btn-danger" role="button">Fahrt löschen</a>
+
+                <form action="/reservieren/{{ fahrt[0] }}" method="post">
+                    <button type="submit"  class="btn btn-primary">Fahrt reservieren</button>
+                </form>
+                <form action="/delete/{{ fahrt[0] }}" method="post">
+                    <button type="submit" class="btn btn-danger">Fahrt löschen</button>
+                </form>
             </div>
         </div>
     </div>

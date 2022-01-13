@@ -45,30 +45,43 @@ def view_driveGet(fahrt_id):
     print(f"{fahrt=}")
     return render_template('view_drive.html', fahrt=fahrt)
 
-#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
-#def view_driveGet_reservieren(fahrt_id):
+@app.route('/reservieren/<fahrt_id>', methods=['POST'])
+def view_drive_reservieren(fahrt_id):
+    Anzahl_Plaetze = request.form.get("Anzahl_Plaetze")
+    print(Anzahl_Plaetze)
     # Reserviere die aktuelle Fahrt, inkrementiere die Reservierung, Schalte nach Bedarf den Status um
-    #try:
-    #    conn = connect.DBUtil().getExternalConnection()
-    #    curs = conn.cursor()
-    #    curs.execute(f"update * from fahrt where fid='{fahrt_id}'")
-    #    fahrt = curs.fetchone()
+    try:
+        conn = connect.DBUtil().getExternalConnection()
+        curs = conn.cursor()
+        curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
+        fahrt = curs.fetchone()
 
-   # except Exception as e:
-     #   print(e)
-    #print(f"{fahrt=}")
-    #return render_template('view_drive.html', fahrt=fahrt)
+        PreparedStatement = f"""insert into Reservieren 
+                            values ('{current_user.getID()}','{fahrt_id}','{Anzahl_Plaetze}')"""
+        curs.execute(PreparedStatement)
 
-#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
-#def view_driveGet_reservieren(fahrt_id):
+    except Exception as e:
+        print(e)
+    print(f"{fahrt}")
+    return render_template('view_drive.html', fahrt=fahrt)
+
+@app.route('/delete/<fahrt_id>', methods=['POST'])
+def view_drive_delete(fahrt_id):
+    print("shesseh")
     # Lösche die aktuelle Reservierung, dekrementiere Reservierung um die Anzahl belegter Plätze, schalte den Status
-    #conn = connect.DBUtil().getExternalConnection()
-    #curs = conn.cursor()
+    try:
+        conn = connect.DBUtil().getExternalConnection()
+        curs = conn.cursor()
+        curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
+        fahrt = curs.fetchone()
 
-    #curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
-    #fahrt = curs.fetchone()
-    #print(f"{fahrt=}")
-    #return render_template('view_drive.html', fahrt=fahrt)
+        PreparedStatement = f"""delete from Reservieren
+                                where Fahrt=({fahrt_id})"""
+        curs.execute(PreparedStatement)
+    except Exception as e:
+        print(e)
+    print(f"{fahrt}")
+    return render_template('view_drive.html', fahrt=fahrt)
 
 
 @app.route("/", methods=["GET"])
