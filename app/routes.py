@@ -45,6 +45,31 @@ def view_driveGet(fahrt_id):
     print(f"{fahrt=}")
     return render_template('view_drive.html', fahrt=fahrt)
 
+#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
+#def view_driveGet_reservieren(fahrt_id):
+    # Reserviere die aktuelle Fahrt, inkrementiere die Reservierung, Schalte nach Bedarf den Status um
+    #try:
+    #    conn = connect.DBUtil().getExternalConnection()
+    #    curs = conn.cursor()
+    #    curs.execute(f"update * from fahrt where fid='{fahrt_id}'")
+    #    fahrt = curs.fetchone()
+
+   # except Exception as e:
+     #   print(e)
+    #print(f"{fahrt=}")
+    #return render_template('view_drive.html', fahrt=fahrt)
+
+#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
+#def view_driveGet_reservieren(fahrt_id):
+    # Lösche die aktuelle Reservierung, dekrementiere Reservierung um die Anzahl belegter Plätze, schalte den Status
+    #conn = connect.DBUtil().getExternalConnection()
+    #curs = conn.cursor()
+
+    #curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
+    #fahrt = curs.fetchone()
+    #print(f"{fahrt=}")
+    #return render_template('view_drive.html', fahrt=fahrt)
+
 
 @app.route("/", methods=["GET"])
 @app.route('/view_main', methods=['GET'])
