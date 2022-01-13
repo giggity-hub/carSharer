@@ -171,11 +171,17 @@ def new_drive_post():
     datum = request.form["Fahrtdatum"]
     zeit = request.form["time"]
     beschreibung = request.form["Beschreibung"]
+
+    print(startort, zielort, maxPlaetze, kosten)
+    print(zielort == True)
     if not beschreibung:
         beschreibung = "NULL"
     else:
         beschreibung = "'" + beschreibung + "'"
 
+    if(not zielort or not startort):
+        flash("Startort und Zielort dürfen nicht leer sein", "error")
+        return redirect(url_for("new_drive_get"))
     # Error handling
     if not maxPlaetze.isnumeric():
         flash("Anzahl an Plätzen muss eine positive Zahl sein", "error")
@@ -222,12 +228,15 @@ def new_rating_get(fahrt_id):
 
 @app.route("/new_rating/<fahrt_id>", methods=["POST"])
 def new_rating_post(fahrt_id):
-    bewertung = request.form.get("Bewertung")
+    bewertung = request.form.get("bewertungstext")
     rating = request.form.get("rating")
 
     # Error Handling
     if not bewertung:
         flash("Die Bewertung darf nicht leer sein!", "error")
+        return redirect("/view_drive/" + str(fahrt_id))
+    if not rating:
+        flash("Rating darf nicht leer sein", "error")
         return redirect("/view_drive/" + str(fahrt_id))
 
     try:
