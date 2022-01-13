@@ -109,9 +109,43 @@
             <h1>Bewertungen</h1>
         </div>
         <div class="col-md-4">
-            <h4>Durchschnittsrating</h4>
+            <h4>Durchschnittsrating: {{ durchschnitt_rating }}</h4>
         </div>
     </div>
+
+    <!-- Bewertungen -->
+    {% if bewertungen %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Benutzer</th>
+                    <th scope="col">Bewertungstext</th>
+                    <th scope="col">rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bewertung in bewertungen %}
+                    <tr>
+                        <td>{{ bewertung[0] }}</td>
+                        <td>{{ bewertung[1] }}</td>
+                        <td>{{ bewertung[2] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+
+        <div class="text-muted text-center mt-3">
+            Keine Bewertungen für diese Fahrt vorhanden. <br>
+            Sei der erste der diese Fahrt bewertet ;)
+        </div>
+
+    {% endif %}
+
+
+
+
+<!--
     <div class = "row">
         <div class="col-md-4">
             E-Mail
@@ -123,6 +157,7 @@
             Rating
         </div>
     </div>
+    -->
     <div class = "row">
         <div class="col-auto me-auto">
 
