@@ -37,7 +37,38 @@ config = csv_reader("properties.settings")
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
     # gette die fahrt zur id und render die in nem passenden template
-    return fahrt_id
+    conn = connect.DBUtil().getExternalConnection()
+    curs = conn.cursor()
+
+    curs.execute(f"select * from fahrt where fid='{fahrt_id}'") 
+    fahrt = curs.fetchone()
+    print(f"{fahrt=}")
+    return render_template('view_drive.html', fahrt=fahrt)
+
+#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
+#def view_driveGet_reservieren(fahrt_id):
+    # Reserviere die aktuelle Fahrt, inkrementiere die Reservierung, Schalte nach Bedarf den Status um
+    #try:
+    #    conn = connect.DBUtil().getExternalConnection()
+    #    curs = conn.cursor()
+    #    curs.execute(f"update * from fahrt where fid='{fahrt_id}'")
+    #    fahrt = curs.fetchone()
+
+   # except Exception as e:
+     #   print(e)
+    #print(f"{fahrt=}")
+    #return render_template('view_drive.html', fahrt=fahrt)
+
+#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
+#def view_driveGet_reservieren(fahrt_id):
+    # Lösche die aktuelle Reservierung, dekrementiere Reservierung um die Anzahl belegter Plätze, schalte den Status
+    #conn = connect.DBUtil().getExternalConnection()
+    #curs = conn.cursor()
+
+    #curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
+    #fahrt = curs.fetchone()
+    #print(f"{fahrt=}")
+    #return render_template('view_drive.html', fahrt=fahrt)
 
 
 @app.route("/", methods=["GET"])
@@ -140,11 +171,17 @@ def new_drive_post():
     datum = request.form["Fahrtdatum"]
     zeit = request.form["time"]
     beschreibung = request.form["Beschreibung"]
+
+    print(startort, zielort, maxPlaetze, kosten)
+    print(zielort == True)
     if not beschreibung:
         beschreibung = "NULL"
     else:
         beschreibung = "'" + beschreibung + "'"
 
+    if(not zielort or not startort):
+        flash("Startort und Zielort dürfen nicht leer sein", "error")
+        return redirect(url_for("new_drive_get"))
     # Error handling
     if not maxPlaetze.isnumeric():
         flash("Anzahl an Plätzen muss eine positive Zahl sein", "error")
@@ -191,12 +228,15 @@ def new_rating_get(fahrt_id):
 
 @app.route("/new_rating/<fahrt_id>", methods=["POST"])
 def new_rating_post(fahrt_id):
-    bewertung = request.form.get("Bewertung")
+    bewertung = request.form.get("bewertungstext")
     rating = request.form.get("rating")
 
     # Error Handling
     if not bewertung:
         flash("Die Bewertung darf nicht leer sein!", "error")
+        return redirect("/view_drive/" + str(fahrt_id))
+    if not rating:
+        flash("Rating darf nicht leer sein", "error")
         return redirect("/view_drive/" + str(fahrt_id))
 
     try:

@@ -1,0 +1,125 @@
+
+
+{% extends 'base.html' %}
+
+{% block title %}Informationen{% endblock %}
+
+{% block content %}
+<div class = "container">
+    <div class ="container">
+        <h1>Informationen</h1>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Anbieter:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">lul woher kommt die E-Mail</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Fahrtdatum und -uhrzeit:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[3]}}</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Von:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[1]}}</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Nach:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[2]}}</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Anzahl freier Plätze:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[1]}}</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Fahrtkosten:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[5]}}</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Status:</label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[6]}}</label>
+            </div>
+        </div>
+            <div class="row">
+            <div class="col-md-6">
+                <label for="" class="form-label">Beschreibung: </label>
+            </div>
+            <div class="col-md-6">
+                <label for="" class="form-label">{{ fahrt[9]}}</label>
+            </div>
+        </div>
+
+        {{fahrt}}
+    </div>
+    <hr style="border-color: green;">
+    <div class = "row">
+        <h1>Aktionsleiste</h1>
+        <div class="col-md-8">
+            Anzahl Plätze für Reservierung
+        </div>
+        <div class="col-auto me-auto">
+
+        </div>
+        <div class="col-auto">
+            <div class="d-grid gap-2">
+              <a href="/view_drive/{{ fahrt[0] }}" class="btn btn-primary" role="button">Fahrt reservieren</a>
+              <a href="/view_drive/{{ fahrt[0] }}" class="btn btn-danger" role="button">Fahrt löschen</a>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border-color: green;">
+    <div class = "row">
+        <div class="col-md-8">
+            <h1>Bewertungen</h1>
+        </div>
+        <div class="col-md-4">
+            <h4>Durchschnittsrating</h4>
+        </div>
+    </div>
+    <div class = "row">
+        <div class="col-md-4">
+            E-Mail
+        </div>
+        <div class="col-md-4">
+            Bewertungskommentar
+        </div>
+        <div class="col-md-4">
+            Rating
+        </div>
+    </div>
+    <div class = "row">
+        <div class="col-auto me-auto">
+
+        </div>
+        <div class="col-auto">
+            <a href="/new_rating/{{ fahrt[0] }}" class="btn btn-primary" role="button">Fahrt bewerten</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
