@@ -1,3 +1,4 @@
+from aifc import Error
 from datetime import date
 from typing import final
 from flask import Flask, request, render_template, redirect, url_for, flash
@@ -7,6 +8,7 @@ import connect
 # from connect import DBUtil
 from userStore import UserStore
 import stores.driveStore as driveStore
+import stores.ratingstore as ratingstore
 # import userStore
 import threading
 import csv
@@ -15,42 +17,55 @@ from currentUser import CurrentUser
 import date_time_util
 from app import app
 
-# class CursorByName():
-#     def __init__(self, cursor):
-#         self._cursor = cursor
-    
-#     def __iter__(self):
-#         return self
-
-#     def __next__(self):
-#         row = self._cursor.__next__()
-
-#         return { description[0]: row[col] for col, description in enumerate(self._cursor.description) }
-
-# def fetch_both(cur):
-#     for row in cur:
-#         print(cur.description)
-#         print(row)
-
 current_user = CurrentUser()
 
-userList = []
-userList.append(user.User("Bill", "Gates"))
-userList.append(user.User("Steve", "Jobs"))
-userList.append(user.User("Larry", "Page"))
-userList.append(user.User("Sergey", "Brin"))
-userList.append(user.User("Larry", "Ellison"))
+# refactored 
+@app.route("/", methods=["GET"])
+@app.route('/view_main', methods=['GET'])
+def view_mainGet():
+    ds = driveStore.DriveStore()
+    try:
+        reservierte_fahrten = ds.getDrivesForUser(current_user.getID())
+        offene_fahrten = ds.getOpenDrives()
+        ds.completion()
+        return render_template('view_main.html',
+                           reservierte_fahrten=reservierte_fahrten,
+                           offene_fahrten=offene_fahrten
+                           )
+    except Exception as e:
+        print(e)
+    finally:
+        ds.close()
 
 
-def csv_reader(path):
-    with open(path, "r") as csvfile:
-        tmp = {}
-        reader = csv.reader(csvfile, delimiter='=')
-        for line in reader:
-            tmp[line[0]] = line[1]
-    return tmp
+@app.route("/new_rating/<fahrt_id>", methods=["POST"])
+def new_rating_post(fahrt_id):
+    rs = ratingstore.RatingStore()
+    try:
+        bewertung = request.form.get("bewertungstext")
+        rating = request.form.get("rating")
 
-config = csv_reader("properties.settings")
+        # Inut Validation
+        assert bewertung, "Die Bewertung darf nicht leer sein!"
+        assert rating, "Rating darf nicht leer sein"
+        assert rs.userHasNotRated(current_user.getID(), fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
+        
+        rs.addRating(current_user.getID(), fahrt_id, bewertung, rating)
+        rs.completion()
+        flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
+        return redirect("/view_drive/" + str(fahrt_id))
+
+    except AssertionError as error_message:
+        flash(str(error_message), "error")
+        return redirect("/view_drive/" + str(fahrt_id))
+
+    except Error as e:
+        pass
+
+    finally:
+        rs.close()
+
+# not refactored
 
 def clob2string(clob):
     if(clob):
@@ -144,22 +159,7 @@ def view_drive_delete(fahrt_id):
     return render_template('view_drive.html', fahrt=fahrt)
 
 
-@app.route("/", methods=["GET"])
-@app.route('/view_main', methods=['GET'])
-def view_mainGet():
-    ds = driveStore.DriveStore()
-    try:
-        reservierte_fahrten = ds.getDrivesForUser(current_user.getID())
-        offene_fahrten = ds.getOpenDrives()
-        ds.completion()
-        return render_template('view_main.html',
-                           reservierte_fahrten=reservierte_fahrten,
-                           offene_fahrten=offene_fahrten
-                           )
-    except Exception as e:
-        print(e)
-    finally:
-        ds.close()
+
 
 
 @app.route('/hello', methods=['GET'])
@@ -291,48 +291,7 @@ def new_rating_get(fahrt_id):
     return render_template("new_rating.html")
 
 
-@app.route("/new_rating/<fahrt_id>", methods=["POST"])
-def new_rating_post(fahrt_id):
-    bewertung = request.form.get("bewertungstext")
-    rating = request.form.get("rating")
 
-    # Error Handling
-    if not bewertung:
-        flash("Die Bewertung darf nicht leer sein!", "error")
-        return redirect("/view_drive/" + str(fahrt_id))
-    if not rating:
-        flash("Rating darf nicht leer sein", "error")
-        return redirect("/view_drive/" + str(fahrt_id))
-
-    try:
-        conn = connect.DBUtil().getExternalConnection()
-        curs = conn.cursor()
-        # checken ob der User die Fahrt schon bewertet hat:
-        curs.execute(f"""   select BENUTZER,FAHRT 
-                            from SCHREIBEN
-                            where BENUTZER = {current_user.getID()} and FAHRT= {fahrt_id}""")
-        bewertung_already_exists = curs.fetchall()
-
-        if not bewertung_already_exists:
-            # Bewertung hinzufügen:
-            curs.execute(f""" Select BEID from new table(INSERT INTO bewertung (textnachricht, erstellungsdatum, rating) VALUES
-                                    ('{bewertung}',CURRENT TIMESTAMP,{rating}))""")
-            bewertung_id = curs.fetchall()[0][0]
-
-            # Bewertung zu SCHREIBEN hinzufügen
-            curs.execute(f"""   Insert INTO SCHREIBEN (BENUTZER, FAHRT, BEWERTUNG) VALUES 
-                                ({current_user.getID()},{fahrt_id},{bewertung_id})""")
-
-        else:
-            flash("Sie haben für diese Fahrt bereits eine Bewertung abgegeben", "error")
-            return redirect("/view_drive/" + str(fahrt_id))
-
-    except Exception as e:
-        print(e)
-        return redirect("/view_drive/" + str(fahrt_id))
-
-    flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
-    return redirect("/view_drive/" + str(fahrt_id))
 
 
 @app.route("/view_search", methods=["GET"])
@@ -363,6 +322,18 @@ def view_search_post():
 
     return render_template("view_search.html", fahrten=fahrten)
 
+
+
+
+def csv_reader(path):
+    with open(path, "r") as csvfile:
+        tmp = {}
+        reader = csv.reader(csvfile, delimiter='=')
+        for line in reader:
+            tmp[line[0]] = line[1]
+    return tmp
+
+config = csv_reader("properties.settings")
 
 if __name__ == "__main__":
     port = int("9" + re.match(r"([a-z]+)([0-9]+)", config["username"], re.I).groups()[1])
