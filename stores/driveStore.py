@@ -1,6 +1,7 @@
 import connect
 from stores.basestore import Store
 from utils import clob2string
+import date_time_util
 
 
 class DriveStore(Store):
@@ -39,3 +40,17 @@ class DriveStore(Store):
             bewertungen.append(bewertung)
             bewertung = curs.fetchone()
         return bewertungen
+
+    def get_search_request(self, start, ziel, datum):
+        # Startort, Zielort, Fahrtkosten und Icon holen:
+        curs = self.conn.cursor()
+        curs.execute(f"""   SELECT f.FID, f.STARTORT, f.ZIELORT,f.FAHRTKOSTEN, t.ICON
+                            from TRANSPORTMITTEL t, (Select STARTORT, ZIELORT, FAHRTKOSTEN, TRANSPORTMITTEL, FID
+                                                    from FAHRT
+                                                    WHERE STATUS = 'offen'
+                                                        and upper(STARTORT) like ?
+                                                        and upper(ZIELORT) like ?
+                                                        and FAHRTDATUMZEIT >= ?) f 
+                            where f.TRANSPORTMITTEL = t.TID""",
+                     (f"%{start}%", f"%{ziel}%", date_time_util.html_date_2_DB2DateTime(datum)))
+        return curs.fetchall()

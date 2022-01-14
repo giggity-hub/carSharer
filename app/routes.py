@@ -10,17 +10,16 @@ from userStore import UserStore
 import stores.driveStore as driveStore
 import stores.ratingstore as ratingstore
 # import userStore
-import threading
 import re
 from currentUser import CurrentUser
 import date_time_util
 from app import app
 from utils import *
 
-
 current_user = CurrentUser()
 
-# refactored 
+
+# refactored
 @app.route("/", methods=["GET"])
 @app.route('/view_main', methods=['GET'])
 def view_mainGet():
@@ -30,9 +29,9 @@ def view_mainGet():
         offene_fahrten = ds.getOpenDrives()
         ds.completion()
         return render_template('view_main.html',
-                           reservierte_fahrten=reservierte_fahrten,
-                           offene_fahrten=offene_fahrten
-                           )
+                               reservierte_fahrten=reservierte_fahrten,
+                               offene_fahrten=offene_fahrten
+                               )
     except Exception as e:
         print(e)
     finally:
@@ -49,8 +48,9 @@ def new_rating_post(fahrt_id):
         # Inut Validation
         assert bewertung, "Die Bewertung darf nicht leer sein!"
         assert rating, "Rating darf nicht leer sein"
-        assert rs.userHasNotRated(current_user.getID(), fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
-        
+        assert rs.userHasNotRated(current_user.getID(),
+                                  fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
+
         rs.addRating(current_user.getID(), fahrt_id, bewertung, rating)
         rs.completion()
         flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
@@ -67,10 +67,27 @@ def new_rating_post(fahrt_id):
         rs.close()
 
 
+@app.route("/view_search", methods=["GET"])
+def view_search_get():
+    return render_template("view_search.html")
+
+
+@app.route("/view_search", methods=["POST"])
+def view_search_post():
+    start = request.form.get("Start").upper()
+    ziel = request.form.get("Ziel").upper()
+    datum = request.form.get("Datum")
+
+    print((not start and ziel) or (start and not ziel))
+
+    # Startort, Zielort, Fahrtkosten und Icon holen:
+    with driveStore.DriveStore() as ds:
+        fahrten = ds.get_search_request(start, ziel, datum)
+
+    return render_template("view_search.html", fahrten=fahrten)
+
+
 # not refactored
-
-
-
 
 
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
@@ -102,6 +119,7 @@ def view_driveGet(fahrt_id):
                                     (select * from BEWERTUNG) b
                         where s.FAHRT = {fahrt_id} and s.BEWERTUNG = b.BEID""")
     durchschnitt_rating = curs.fetchone()
+
     try:
         durchschnitt_rating = round(durchschnitt_rating[0], 2)
     except TypeError:
@@ -111,7 +129,7 @@ def view_driveGet(fahrt_id):
         bewertungen = ds.get_bewertungen(fahrt_id)
 
     return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
-                           bewertungen=bewertungen)
+                           bewertungen=bewertungen, fahrt_id=fahrt_id)
 
 
 @app.route('/reservieren/<fahrt_id>', methods=['POST'])
@@ -132,12 +150,11 @@ def view_drive_reservieren(fahrt_id):
     except Exception as e:
         print(e)
     print(f"{fahrt}")
-    return render_template('view_drive.html', fahrt=fahrt)
+    return render_template('view_drive.html', fahrt=fahrt_id)
 
 
 @app.route('/delete/<fahrt_id>', methods=['POST'])
 def view_drive_delete(fahrt_id):
-    print("shesseh")
     # Lösche die aktuelle Reservierung, dekrementiere Reservierung um die Anzahl belegter Plätze, schalte den Status
     try:
         conn = connect.DBUtil().getExternalConnection()
@@ -151,7 +168,7 @@ def view_drive_delete(fahrt_id):
     except Exception as e:
         print(e)
     print(f"{fahrt}")
-    return render_template('view_drive.html', fahrt=fahrt)
+    return redirect(url_for(view_driveGet) + f"/{fahrt_id}")
 
 
 # @app.route('/hello', methods=['GET'])
@@ -229,8 +246,6 @@ def new_drive_post():
     zeit = request.form["time"]
     beschreibung = request.form["Beschreibung"]
 
-    print(startort, zielort, maxPlaetze, kosten)
-    print(zielort == True)
     if not beschreibung:
         beschreibung = "NULL"
     else:
@@ -284,46 +299,6 @@ def new_rating_get(fahrt_id):
 
 
 
-
-
-@app.route("/view_search", methods=["GET"])
-def view_search_get():
-    return render_template("view_search.html")
-
-
-@app.route("/view_search", methods=["POST"])
-def view_search_post():
-    start = request.form.get("Start").upper()
-    ziel = request.form.get("Ziel").upper()
-    datum = request.form.get("Datum")
-
-    print((not start and ziel) or (start and not ziel))
-
-    # Startort, Zielort, Fahrtkosten und Icon holen:
-    conn = connect.DBUtil().getExternalConnection()
-    curr = conn.cursor()
-    curr.execute(f"""   SELECT f.FID, f.STARTORT, f.ZIELORT,f.FAHRTKOSTEN, t.ICON
-                        from TRANSPORTMITTEL t, (Select STARTORT, ZIELORT, FAHRTKOSTEN, TRANSPORTMITTEL, FID
-                                                from FAHRT
-                                                WHERE STATUS = 'offen'
-                                                    and upper(STARTORT) like '%{start}%'
-                                                    and upper(ZIELORT) like '%{ziel}%'
-                                                    and FAHRTDATUMZEIT >= '{date_time_util.html_date_2_DB2DateTime(datum)}') f
-                        where f.TRANSPORTMITTEL = t.TID""")
-    fahrten = curr.fetchall()
-
-    return render_template("view_search.html", fahrten=fahrten)
-
-
-
-
-def csv_reader(path):
-    with open(path, "r") as csvfile:
-        tmp = {}
-        reader = csv.reader(csvfile, delimiter='=')
-        for line in reader:
-            tmp[line[0]] = line[1]
-    return tmp
 
 config = csv_reader("properties.settings")
 

@@ -92,10 +92,10 @@
         <div class="col-auto">
             <div class="d-grid gap-2">
 
-                <form action="/reservieren/{{ fahrt[0] }}" method="post">
+                <form action="/reservieren/{{ fahrt_id }}" method="post">
                     <button type="submit"  class="btn btn-primary">Fahrt reservieren</button>
                 </form>
-                <form action="/delete/{{ fahrt[0] }}" method="post">
+                <form action="/delete/{{ fahrt_id }}" method="post">
                     <button type="submit" class="btn btn-danger">Fahrt löschen</button>
                 </form>
             </div>
@@ -162,7 +162,7 @@
 
         </div>
         <div class="col-auto">
-            <a href="/new_rating/{{ fahrt[0] }}" class="btn btn-primary" role="button">Fahrt bewerten</a>
+            <a href="/new_rating/{{ fahrt_id }}" class="btn btn-primary" role="button">Fahrt bewerten</a>
         </div>
     </div>
 </div>
