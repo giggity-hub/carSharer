@@ -11,11 +11,12 @@ import stores.driveStore as driveStore
 import stores.ratingstore as ratingstore
 # import userStore
 import threading
-import csv
 import re
 from currentUser import CurrentUser
 import date_time_util
 from app import app
+from utils import *
+
 
 current_user = CurrentUser()
 
@@ -65,13 +66,12 @@ def new_rating_post(fahrt_id):
     finally:
         rs.close()
 
+
 # not refactored
 
-def clob2string(clob):
-    if(clob):
-        return clob.getSubString(1, clob.length())
-    else:
-        return ""
+
+
+
 
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
@@ -83,7 +83,7 @@ def view_driveGet(fahrt_id):
     curs.execute(f"""select f.fid, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
                             b.email, t.icon
                     from fahrt f, benutzer b, transportmittel t
-                    where f.fid='{fahrt_id}' and b.bid=f.anbieter and t.tid=f.transportmittel """) 
+                    where f.fid='{fahrt_id}' and b.bid=f.anbieter and t.tid=f.transportmittel """)
     fahrtTupel = curs.fetchone()
 
     fahrt = dict(zip(columns.split(', '), fahrtTupel))
@@ -96,7 +96,6 @@ def view_driveGet(fahrt_id):
                         GROUP BY FID) tmp
                     where tmp.fid = f.fid and f.fid=?""", (fahrt["fid"],))
     fahrt["freiePlaetze"] = curs.fetchone()[0]
-    
 
     #  average rating getten
     curs.execute(f"""   select AVG( cast(b.RATING as decimal(4,2))) as Durchschnitt from SCHREIBEN s,
@@ -104,16 +103,12 @@ def view_driveGet(fahrt_id):
                         where s.FAHRT = {fahrt_id} and s.BEWERTUNG = b.BEID""")
     durchschnitt_rating = curs.fetchone()
     try:
-        durchschnitt_rating = round(durchschnitt_rating[0],2)
+        durchschnitt_rating = round(durchschnitt_rating[0], 2)
     except TypeError:
         durchschnitt_rating = 0
 
-    #  alle Bewertungen zu der Fahrt getten
-    curs.execute(f"""   select ben.EMAIL, bew.TEXTNACHRICHT, bew.RATING from SCHREIBEN s,
-                                      (select EMAIL, BID from BENUTZER) ben,
-                                      (select BEID, TEXTNACHRICHT, RATING from BEWERTUNG) bew
-                        where s.FAHRT = {fahrt_id} and s.BENUTZER = ben.BID and s.BEWERTUNG = bew.BEID""")
-    bewertungen = curs.fetchall()
+    with driveStore.DriveStore() as ds:
+        bewertungen = ds.get_bewertungen(fahrt_id)
 
     return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
                            bewertungen=bewertungen)
@@ -159,25 +154,22 @@ def view_drive_delete(fahrt_id):
     return render_template('view_drive.html', fahrt=fahrt)
 
 
+# @app.route('/hello', methods=['GET'])
+# def helloGet():
+#     return render_template('hello.html', users=userList)
 
 
+# @app.route('/hello', methods=['POST'])
+# def helloPost():
+#     firstname = request.form.get('firstname')
+#     lastname = request.form.get('lastname')
+#     return f"{firstname}, {lastname}"
 
-@app.route('/hello', methods=['GET'])
-def helloGet():
-    return render_template('hello.html', users=userList)
+#     # if firstname is not None and lastname is not None and firstname and lastname:
+#     #     with threading.Lock():
+#     #         userList.append(user.User(firstname, lastname))
 
-
-@app.route('/hello', methods=['POST'])
-def helloPost():
-    firstname = request.form.get('firstname')
-    lastname = request.form.get('lastname')
-    return f"{firstname}, {lastname}"
-
-    # if firstname is not None and lastname is not None and firstname and lastname:
-    #     with threading.Lock():
-    #         userList.append(user.User(firstname, lastname))
-
-    # return render_template('hello.html', users=userList)
+#     # return render_template('hello.html', users=userList)
 
 
 @app.route('/carSharer', methods=['GET'])
