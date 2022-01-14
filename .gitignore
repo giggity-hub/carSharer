@@ -5,3 +5,7 @@
 /app/__pycache__
 app/__pycache__/*
 app/__pycache__/routes.cpython-310.pyc
+stores/__pycache__/basestore.cpython-310.pyc
+stores/__pycache__/driveStore.cpython-310.pyc
+stores/__pycache__/ratingstore.cpython-310.pyc
+app/__pycache__/routes.cpython-310.pyc
