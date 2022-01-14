@@ -78,32 +78,67 @@ def view_driveGet(fahrt_id):
                         GROUP BY FID) tmp
                     where tmp.fid = f.fid and f.fid=?""", (fahrt["fid"],))
     fahrt["freiePlaetze"] = curs.fetchone()[0]
+    
+
+    #  average rating getten
+    curs.execute(f"""   select AVG( cast(b.RATING as decimal(4,2))) as Durchschnitt from SCHREIBEN s,
+                                    (select * from BEWERTUNG) b
+                        where s.FAHRT = {fahrt_id} and s.BEWERTUNG = b.BEID""")
+    durchschnitt_rating = curs.fetchone()
+    try:
+        durchschnitt_rating = round(durchschnitt_rating[0],2)
+    except TypeError:
+        durchschnitt_rating = 0
+
+    #  alle Bewertungen zu der Fahrt getten
+    curs.execute(f"""   select ben.EMAIL, bew.TEXTNACHRICHT, bew.RATING from SCHREIBEN s,
+                                      (select EMAIL, BID from BENUTZER) ben,
+                                      (select BEID, TEXTNACHRICHT, RATING from BEWERTUNG) bew
+                        where s.FAHRT = {fahrt_id} and s.BENUTZER = ben.BID and s.BEWERTUNG = bew.BEID""")
+    bewertungen = curs.fetchall()
+
+    return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
+                           bewertungen=bewertungen)
+
+
+@app.route('/reservieren/<fahrt_id>', methods=['POST'])
+def view_drive_reservieren(fahrt_id):
+    Anzahl_Plaetze = request.form.get("Anzahl_Plaetze")
+    print(Anzahl_Plaetze)
+    # Reserviere die aktuelle Fahrt, inkrementiere die Reservierung, Schalte nach Bedarf den Status um
+    try:
+        conn = connect.DBUtil().getExternalConnection()
+        curs = conn.cursor()
+        curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
+        fahrt = curs.fetchone()
+
+        PreparedStatement = f"""insert into Reservieren 
+                            values ('{current_user.getID()}','{fahrt_id}','{Anzahl_Plaetze}')"""
+        curs.execute(PreparedStatement)
+
+    except Exception as e:
+        print(e)
+    print(f"{fahrt}")
     return render_template('view_drive.html', fahrt=fahrt)
 
-#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
-#def view_driveGet_reservieren(fahrt_id):
-    # Reserviere die aktuelle Fahrt, inkrementiere die Reservierung, Schalte nach Bedarf den Status um
-    #try:
-    #    conn = connect.DBUtil().getExternalConnection()
-    #    curs = conn.cursor()
-    #    curs.execute(f"update * from fahrt where fid='{fahrt_id}'")
-    #    fahrt = curs.fetchone()
 
-   # except Exception as e:
-     #   print(e)
-    #print(f"{fahrt=}")
-    #return render_template('view_drive.html', fahrt=fahrt)
-
-#@app.route('/view_drive/<fahrt_id>', methods=['GET'])
-#def view_driveGet_reservieren(fahrt_id):
+@app.route('/delete/<fahrt_id>', methods=['POST'])
+def view_drive_delete(fahrt_id):
+    print("shesseh")
     # Lösche die aktuelle Reservierung, dekrementiere Reservierung um die Anzahl belegter Plätze, schalte den Status
-    #conn = connect.DBUtil().getExternalConnection()
-    #curs = conn.cursor()
+    try:
+        conn = connect.DBUtil().getExternalConnection()
+        curs = conn.cursor()
+        curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
+        fahrt = curs.fetchone()
 
-    #curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
-    #fahrt = curs.fetchone()
-    #print(f"{fahrt=}")
-    #return render_template('view_drive.html', fahrt=fahrt)
+        PreparedStatement = f"""delete from Reservieren
+                                where Fahrt=({fahrt_id})"""
+        curs.execute(PreparedStatement)
+    except Exception as e:
+        print(e)
+    print(f"{fahrt}")
+    return render_template('view_drive.html', fahrt=fahrt)
 
 
 
@@ -114,7 +149,7 @@ def view_mainGet():
     conn = connect.DBUtil().getExternalConnection()
     curs = conn.cursor()
     # Reservierte Fahrten
-    curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, f.status 
+    curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, f.status
                         from fahrt f, transportmittel t
                         where f.fid in (select fahrt from reservieren where kunde='{current_user.getID()}') and t.tid = f.transportmittel""")
     reservierte_fahrten = curs.fetchall()
@@ -216,7 +251,7 @@ def new_drive_post():
     else:
         beschreibung = "'" + beschreibung + "'"
 
-    if(not zielort or not startort):
+    if not zielort or not startort:
         flash("Startort und Zielort dürfen nicht leer sein", "error")
         return redirect(url_for("new_drive_get"))
     # Error handling
@@ -318,6 +353,8 @@ def view_search_post():
     ziel = request.form.get("Ziel").upper()
     datum = request.form.get("Datum")
 
+    print((not start and ziel) or (start and not ziel))
+
     # Startort, Zielort, Fahrtkosten und Icon holen:
     conn = connect.DBUtil().getExternalConnection()
     curr = conn.cursor()
@@ -325,9 +362,9 @@ def view_search_post():
                         from TRANSPORTMITTEL t, (Select STARTORT, ZIELORT, FAHRTKOSTEN, TRANSPORTMITTEL, FID
                                                 from FAHRT
                                                 WHERE STATUS = 'offen'
-                                                  and upper(STARTORT) like '%{start}%'
-                                                  and upper(ZIELORT) like '%{ziel}%'
-                                                  and FAHRTDATUMZEIT >= '{date_time_util.html_date_2_DB2DateTime(datum)}') f
+                                                    and upper(STARTORT) like '%{start}%'
+                                                    and upper(ZIELORT) like '%{ziel}%'
+                                                    and FAHRTDATUMZEIT >= '{date_time_util.html_date_2_DB2DateTime(datum)}') f
                         where f.TRANSPORTMITTEL = t.TID""")
     fahrten = curr.fetchall()
 
