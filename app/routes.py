@@ -1,9 +1,12 @@
 from datetime import date
+from typing import final
 from flask import Flask, request, render_template, redirect, url_for, flash
+from stores.driveStore import DriveStore
 import user
 import connect
 # from connect import DBUtil
 from userStore import UserStore
+import stores.driveStore as driveStore
 # import userStore
 import threading
 import csv
@@ -141,32 +144,22 @@ def view_drive_delete(fahrt_id):
     return render_template('view_drive.html', fahrt=fahrt)
 
 
-
-
 @app.route("/", methods=["GET"])
 @app.route('/view_main', methods=['GET'])
 def view_mainGet():
-    conn = connect.DBUtil().getExternalConnection()
-    curs = conn.cursor()
-    # Reservierte Fahrten
-    curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, f.status
-                        from fahrt f, transportmittel t
-                        where f.fid in (select fahrt from reservieren where kunde='{current_user.getID()}') and t.tid = f.transportmittel""")
-    reservierte_fahrten = curs.fetchall()
-
-    # Offene Fahrten
-    curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
-                    from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
-                                                        from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
-                                                        GROUP BY FID) tmp
-                    where tmp.fid = f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""")
-    offene_fahrten = curs.fetchall()
-    return render_template('view_main.html',
+    ds = driveStore.DriveStore()
+    try:
+        reservierte_fahrten = ds.getDrivesForUser(current_user.getID())
+        offene_fahrten = ds.getOpenDrives()
+        ds.completion()
+        return render_template('view_main.html',
                            reservierte_fahrten=reservierte_fahrten,
                            offene_fahrten=offene_fahrten
                            )
-    # 1.) alle vom nutzer reservierten fahrten getten
-    # 2.) alle noch freien fahrten getten
+    except Exception as e:
+        print(e)
+    finally:
+        ds.close()
 
 
 @app.route('/hello', methods=['GET'])
