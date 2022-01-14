@@ -12,6 +12,23 @@ from currentUser import CurrentUser
 import date_time_util
 from app import app
 
+# class CursorByName():
+#     def __init__(self, cursor):
+#         self._cursor = cursor
+    
+#     def __iter__(self):
+#         return self
+
+#     def __next__(self):
+#         row = self._cursor.__next__()
+
+#         return { description[0]: row[col] for col, description in enumerate(self._cursor.description) }
+
+# def fetch_both(cur):
+#     for row in cur:
+#         print(cur.description)
+#         print(row)
+
 current_user = CurrentUser()
 
 userList = []
@@ -30,9 +47,13 @@ def csv_reader(path):
             tmp[line[0]] = line[1]
     return tmp
 
-
 config = csv_reader("properties.settings")
 
+def clob2string(clob):
+    if(clob):
+        return clob.getSubString(1, clob.length())
+    else:
+        return ""
 
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
@@ -40,9 +61,23 @@ def view_driveGet(fahrt_id):
     conn = connect.DBUtil().getExternalConnection()
     curs = conn.cursor()
 
-    curs.execute(f"select * from fahrt where fid='{fahrt_id}'") 
-    fahrt = curs.fetchone()
-    print(f"{fahrt=}")
+    columns = 'fid, startort, zielort, fahrtdatumzeit, maxPlaetze, fahrtkosten, status, beschreibung, email, icon'
+    curs.execute(f"""select f.fid, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
+                            b.email, t.icon
+                    from fahrt f, benutzer b, transportmittel t
+                    where f.fid='{fahrt_id}' and b.bid=f.anbieter and t.tid=f.transportmittel """) 
+    fahrtTupel = curs.fetchone()
+
+    fahrt = dict(zip(columns.split(', '), fahrtTupel))
+    fahrt["beschreibung_string"] = clob2string(fahrt["beschreibung"])
+
+    # freie plätze berechnen
+    curs.execute("""select (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze
+                    from fahrt f, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
+                        from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
+                        GROUP BY FID) tmp
+                    where tmp.fid = f.fid and f.fid=?""", (fahrt["fid"],))
+    fahrt["freiePlaetze"] = curs.fetchone()[0]
     return render_template('view_drive.html', fahrt=fahrt)
 
 #@app.route('/view_drive/<fahrt_id>', methods=['GET'])
@@ -69,6 +104,8 @@ def view_driveGet(fahrt_id):
     #fahrt = curs.fetchone()
     #print(f"{fahrt=}")
     #return render_template('view_drive.html', fahrt=fahrt)
+
+
 
 
 @app.route("/", methods=["GET"])

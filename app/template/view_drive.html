@@ -14,7 +14,7 @@
                 <label for="" class="form-label">Anbieter:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">lul woher kommt die E-Mail</label>
+                <label for="" class="form-label">{{fahrt["email"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -22,7 +22,7 @@
                 <label for="" class="form-label">Fahrtdatum und -uhrzeit:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[3]}}</label>
+                <label for="" class="form-label">{{ fahrt["fahrtdatumzeit"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -30,7 +30,7 @@
                 <label for="" class="form-label">Von:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[1]}}</label>
+                <label for="" class="form-label">{{ fahrt["startort"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -38,7 +38,7 @@
                 <label for="" class="form-label">Nach:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[2]}}</label>
+                <label for="" class="form-label">{{ fahrt["zielort"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -46,7 +46,7 @@
                 <label for="" class="form-label">Anzahl freier Plätze:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[4]}}</label>
+                <label for="" class="form-label">{{ fahrt["freiePlaetze"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -54,7 +54,7 @@
                 <label for="" class="form-label">Fahrtkosten:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[5]}}</label>
+                <label for="" class="form-label">{{ fahrt["fahrtkosten"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -62,7 +62,7 @@
                 <label for="" class="form-label">Status:</label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[6]}}</label>
+                <label for="" class="form-label">{{ fahrt["status"]}}</label>
             </div>
         </div>
             <div class="row">
@@ -70,11 +70,10 @@
                 <label for="" class="form-label">Beschreibung: </label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt[9]}}</label>
+                <label for="" class="form-label">{{ fahrt["beschreibung_string"]}}</label>
             </div>
         </div>
 
-        {{fahrt}}
     </div>
     <hr style="border-color: green;">
     <div class = "row">
