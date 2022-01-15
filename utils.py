@@ -20,4 +20,4 @@ def tuple2dict(tupel, columns):
     return dict(zip(columns, tupel))
 
 def tupleList2dictList(tupelList, columns):
-    tupelList.map(lambda t: tuple2dict(t, columns), tupelList)
+    return map(lambda t: tuple2dict(t, columns), tupelList)

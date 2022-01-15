@@ -79,8 +79,8 @@
                 <legend class="col-form-label">Transportmittel</legend>
                 {% for t in transportmittel %}
                     <div class="form-check ">
-                        <input class="form-check-input" type="radio" name="Transportmittel" id="{{ t[1] }}" value="{{ t[0] }}" required>
-                        <label class="form-check-label" for="{{ t[1] }}">{{ t[1] }}</label>
+                        <input class="form-check-input" type="radio" name="Transportmittel" id="{{ t["name"] }}" value="{{ t["tid"] }}" required>
+                        <label class="form-check-label" for="{{ t["name"] }}">{{ t["name"] }}</label>
 
                         {% if loop.last %}
                             <div class="invalid-feedback">

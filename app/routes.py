@@ -6,6 +6,7 @@ from typing import final
 from flask import Flask, request, render_template, redirect, url_for, flash
 from stores.bookingstore import BookingStore
 from stores.driveStore import DriveStore
+from stores.vehiclestore import VehicleStore
 import user
 import connect
 # from connect import DBUtil
@@ -129,6 +130,12 @@ def view_drive_reservieren(fahrt_id):
         bs.book_drive(current_user.getID(), fahrt_id, anzahl_plaetze)
         return redirect(f'/view_drive/{fahrt_id}')
 
+@app.route("/new_drive", methods=["GET"])
+def new_drive_get():
+    with VehicleStore() as vs:
+        transportmittel = vs.get_vehicles()
+        today = date.today()
+        return render_template("new_drive.html", transportmittel=transportmittel, today=today)
 # not refactored
 
 
@@ -148,50 +155,9 @@ def view_drive_delete(fahrt_id):
         return redirect('view_main')
 
 
-@app.route('/carSharer', methods=['GET'])
-def carShare():
-    try:
-        dbExists = connect.DBUtil().checkDatabaseExistsExternal()
-        if dbExists:
-            db2exists = 'vorhanden! Supi!'
-        else:
-            db2exists = 'nicht vorhanden :-('
-    except Exception as e:
-        print(e)
-
-    return render_template('carSharer.html', db2exists=db2exists)
 
 
-@app.route('/addUser', methods=['GET'])
-def addUser():
-    userSt = UserStore()
-    try:
-        # userSt = {}
-
-        userToAdd = user.User("Max", "Mustermann")
-        moped = userSt.addUser(userToAdd)
-        print(moped)
-        # userSt.addUser(userToAdd)
-        # userSt.completion()
-
-        return "saaaaaaaas"
-        # ...
-        # mach noch mehr!
-    except Exception as e:
-        print(e)
-        return "Failed!"
-    finally:
-        userSt.close()
-
-
-@app.route("/new_drive", methods=["GET"])
-def new_drive_get():
-    conn = connect.DBUtil().getExternalConnection()
-    curs = conn.cursor()
-    curs.execute("""SELECT tid, name FROM transportmittel""")
-    transportmittel = curs.fetchall()
-    today = date.today()
-    return render_template("new_drive.html", transportmittel=transportmittel, today=today)
+    
 
 
 @app.route("/new_drive", methods=["POST"])
