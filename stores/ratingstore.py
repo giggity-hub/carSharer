@@ -5,7 +5,7 @@ class RatingStore(Store):
 
     def userHasNotRated(self, bid, fid):
         curs = self.conn.cursor()
-        curs.execute(f"""   select BENUTZER,FAHRT 
+        curs.execute("""   select BENUTZER,FAHRT 
                             from SCHREIBEN
                             where BENUTZER =? and FAHRT=?""", (bid, fid))
         return not bool(curs.fetchone())
@@ -13,11 +13,11 @@ class RatingStore(Store):
     def addRating(self, bid, fid, text, rating):
         curs = self.conn.cursor()
         print(bid, fid, text, rating)
-        curs.execute(f""" Select BEID from new table(INSERT INTO bewertung (textnachricht, erstellungsdatum, rating) VALUES
+        curs.execute(""" Select BEID from new table(INSERT INTO bewertung (textnachricht, erstellungsdatum, rating) VALUES
                                 ( ? ,CURRENT TIMESTAMP, ?))""", (text, rating))
         rid = curs.fetchall()[0][0]
         print(rid)
 
         # Bewertung zu SCHREIBEN hinzufügen
-        curs.execute(f"""   Insert INTO SCHREIBEN (BENUTZER, FAHRT, BEWERTUNG) VALUES 
+        curs.execute("""   Insert INTO SCHREIBEN (BENUTZER, FAHRT, BEWERTUNG) VALUES 
                             (?,?,?)""", (bid, fid, rid))

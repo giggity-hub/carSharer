@@ -10,7 +10,7 @@ class DriveStore(Store):
 
     def getDrivesForUser(self, uid):
         curs = self.conn.cursor()
-        curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, f.status
+        curs.execute("""select f.fid, t.icon, f.startort, f.zielort, f.status
                         from fahrt f, transportmittel t
                         where f.fid in (select fahrt from reservieren where kunde=?) and t.tid = f.transportmittel""",
                      (uid))
@@ -18,7 +18,7 @@ class DriveStore(Store):
 
     def getOpenDrives(self):
         curs = self.conn.cursor()
-        curs.execute(f"""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
+        curs.execute("""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
                     from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
                                                         from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
                                                         GROUP BY FID) tmp
@@ -28,10 +28,10 @@ class DriveStore(Store):
     def get_bewertungen(self, fahrt_id):
         curs = self.conn.cursor()
         #  alle Bewertungen zu der Fahrt getten
-        curs.execute(f"""   select ben.EMAIL, bew.TEXTNACHRICHT, bew.RATING from SCHREIBEN s,
+        curs.execute("""   select ben.EMAIL, bew.TEXTNACHRICHT, bew.RATING from SCHREIBEN s,
                                               (select EMAIL, BID from BENUTZER) ben,
                                               (select BEID, TEXTNACHRICHT, RATING from BEWERTUNG) bew
-                                where s.FAHRT = {fahrt_id} and s.BENUTZER = ben.BID and s.BEWERTUNG = bew.BEID""")
+                                where s.FAHRT =? and s.BENUTZER = ben.BID and s.BEWERTUNG = bew.BEID""", (fahrt_id,))
 
         # Alle CLOBs in Strings umwandeln.
         bewertungen = []
@@ -46,7 +46,7 @@ class DriveStore(Store):
     def get_avg_rating(self, fid):
         # Average Rating
         curs = self.conn.cursor()
-        curs.execute(f"""   select AVG( cast(b.RATING as decimal(4,2))) as Durchschnitt from SCHREIBEN s,
+        curs.execute("""   select AVG( cast(b.RATING as decimal(4,2))) as Durchschnitt from SCHREIBEN s,
                                     (select * from BEWERTUNG) b
                         where s.FAHRT =? and s.BEWERTUNG = b.BEID""", (fid,))
         durchschnitt_rating = curs.fetchone()
@@ -61,7 +61,7 @@ class DriveStore(Store):
         try:
             curs = self.conn.cursor()
 
-            curs.execute(f"""select f.fid, f.anbieter, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
+            curs.execute("""select f.fid, f.anbieter, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
                                     b.email, t.icon
                             from fahrt f, benutzer b, transportmittel t
                             where f.fid=? and b.bid=f.anbieter and t.tid=f.transportmittel """, (fid,))
