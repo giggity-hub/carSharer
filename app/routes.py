@@ -19,6 +19,7 @@ from currentUser import CurrentUser
 import date_time_util
 from app import app
 from utils import *
+from jpype import JavaException
 
 current_user = CurrentUser()
 
@@ -136,6 +137,55 @@ def new_drive_get():
         transportmittel = vs.get_vehicles()
         today = date.today()
         return render_template("new_drive.html", transportmittel=transportmittel, today=today)
+
+
+
+@app.route("/new_drive", methods=["POST"])
+def new_drive_post():
+    startort = request.form["Startort"]
+    zielort = request.form["Zielort"]
+    maxPlaetze = request.form["maxPlaetze"]
+    kosten = request.form["Kosten"]
+    transportmittel = request.form["Transportmittel"]
+    datum = request.form["Fahrtdatum"]
+    zeit = request.form["time"]
+    beschreibung = request.form["Beschreibung"]
+    beschreibung = f"'beschreibung'" if beschreibung else "NULL"
+
+    with DriveStore() as ds:
+        try:
+            assert zielort, "Zielort darf nicht leer sein"
+            assert startort, "Startort darf nicht leer sein" 
+            assert maxPlaetze.isnumeric(), "Anzahl an Plätzen muss eine positive Zahl sein"
+            assert int(maxPlaetze) > 0 and int(maxPlaetze) <= 10, "Die Anzahl an Plätzen muss zwischen 1 und 10 liegen"
+            assert kosten.isnumeric(), "Die Fahrtkosten müssen eine positive Ganzzahl sein"
+            assert date_time_util.check_date_validity(datum), "Das eingegebene Datum liegt in der Vergangenheit."
+            assert len(beschreibung) <= 50, "Die Länge der Beschreibung darf maximal 50 Zeichen lang sein"
+
+            ds.create_drive(
+                startort, 
+                zielort, 
+                date_time_util.html_date_time_2_DB2DateTime(datum, zeit),
+                maxPlaetze, 
+                kosten,
+                current_user.getID(),
+                transportmittel,
+                beschreibung
+            )
+            flash("Die Fahrt wurde erfolgreich hinzugefügt", "info")
+            return redirect(url_for("view_mainGet"))
+
+        except AssertionError as error_message:
+            flash(str(error_message), "error")
+            return redirect("/new_drive")
+        except JavaException as e:
+            flash("Allgemein Fehler mit der Datenbank.", "error")
+            return redirect(url_for("new_drive_get"))
+
+@app.route("/new_rating/<fahrt_id>", methods=["GET"])
+def new_rating_get(fahrt_id):
+    return render_template("new_rating.html")
+
 # not refactored
 
 
@@ -156,71 +206,6 @@ def view_drive_delete(fahrt_id):
 
 
 
-
-    
-
-
-@app.route("/new_drive", methods=["POST"])
-def new_drive_post():
-    startort = request.form["Startort"]
-    zielort = request.form["Zielort"]
-    maxPlaetze = request.form["maxPlaetze"]
-    kosten = request.form["Kosten"]
-    transportmittel = request.form["Transportmittel"]
-    datum = request.form["Fahrtdatum"]
-    zeit = request.form["time"]
-    beschreibung = request.form["Beschreibung"]
-
-    if not beschreibung:
-        beschreibung = "NULL"
-    else:
-        beschreibung = "'" + beschreibung + "'"
-
-    if not zielort or not startort:
-        flash("Startort und Zielort dürfen nicht leer sein", "error")
-        return redirect(url_for("new_drive_get"))
-    # Error handling
-    if not maxPlaetze.isnumeric():
-        flash("Anzahl an Plätzen muss eine positive Zahl sein", "error")
-        return redirect(url_for("new_drive_get"))
-
-    if int(maxPlaetze) >= 0 and int(maxPlaetze) > 10:
-        flash("Die Anzahl an Plätzen darf maximal 10 betragen", "error")
-        return redirect(url_for("new_drive_get"))
-
-    if not kosten.isnumeric():
-        flash("Die Fahrtkosten müssen eine positive Ganzzahl sein", "error")
-        return redirect(url_for("new_drive_get"))
-
-    if not date_time_util.check_date_validity(datum):
-        flash("Das eingegebene Datum liegt in der Vergangenheit.", "error")
-        return redirect(url_for("new_drive_get"))
-
-    if len(beschreibung) > 50:
-        flash("Die Länge der Beschreibung darf maximal 50 Zeichen lang sein", "error")
-        return redirect(url_for("new_drive_get"))
-
-    try:
-        # Fahrt zu DB hinzufügen
-        conn = connect.DBUtil().getExternalConnection()
-        curs = conn.cursor()
-        curs.execute(f"""INSERT INTO fahrt (startort, zielort, fahrtdatumzeit, maxPlaetze,
-                                            fahrtkosten, anbieter, transportmittel, beschreibung)  VALUES 
-                                ('{startort}', '{zielort}', '{date_time_util.html_date_time_2_DB2DateTime(datum, zeit)}', {maxPlaetze},
-                                 {kosten}, {current_user.getID()}, {transportmittel}, {beschreibung} )""")
-
-    except Exception as e:
-        print(e)
-        flash("Allgemein Fehler mit der Datenbank.", "error")
-        return redirect(url_for("new_drive_get"))
-
-    flash("Die Fahrt wurde erfolgreich hinzugefügt", "info")
-    return redirect(url_for("view_mainGet"))
-
-
-@app.route("/new_rating/<fahrt_id>", methods=["GET"])
-def new_rating_get(fahrt_id):
-    return render_template("new_rating.html")
 
 
 

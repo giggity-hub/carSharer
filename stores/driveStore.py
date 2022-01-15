@@ -111,3 +111,9 @@ class DriveStore(Store):
         # curs.execute("delete from Bewertung where beid in (select bewertung from FINAL TABLE (delete from schreiben where fahrt=?))", (fid,))
         # curs.execute("delete from fahrt where fid=?", (fid,))
         pass
+
+    def create_drive(self, startort, zielort, datumzeit, maxPlaetze, kosten, uid, tid, beschreibung):
+        curs = self.conn.cursor()
+        pstmt = """INSERT INTO fahrt (startort, zielort, fahrtdatumzeit, maxPlaetze,
+                    fahrtkosten, anbieter, transportmittel, beschreibung)  VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+        curs.execute(pstmt, (startort, zielort, datumzeit, maxPlaetze, kosten, uid, tid, beschreibung))
