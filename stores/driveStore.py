@@ -61,7 +61,7 @@ class DriveStore(Store):
         try:
             curs = self.conn.cursor()
 
-            curs.execute(f"""select f.fid, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
+            curs.execute(f"""select f.fid, f.anbieter, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
                                     b.email, t.icon
                             from fahrt f, benutzer b, transportmittel t
                             where f.fid=? and b.bid=f.anbieter and t.tid=f.transportmittel """, (fid,))
@@ -71,8 +71,8 @@ class DriveStore(Store):
                 abort(404)
 
             print(fahrtTupel)
-            fahrtTupel += (clob2string(fahrtTupel[7]),)
-            columns = ['fid', 'startort', 'zielort', 'fahrtdatumzeit', 'maxPlaetze', 'fahrtkosten', 'status', 'beschreibung', 'email', 'icon', 'beschreibung_string']
+            fahrtTupel += (clob2string(fahrtTupel[8]),)
+            columns = ['fid', 'anbieter', 'startort', 'zielort', 'fahrtdatumzeit', 'maxPlaetze', 'fahrtkosten', 'status', 'beschreibung', 'email', 'icon', 'beschreibung_string']
             fahrt = tuple2dict(fahrtTupel, columns)
             # fahrt["beschreibung_string"] = clob2string(fahrt["beschreibung"])
 
@@ -103,3 +103,11 @@ class DriveStore(Store):
                      (f"%{start}%", f"%{ziel}%", date_time_util.html_date_2_DB2DateTime(datum)))
         return curs.fetchall()
 
+
+    def delete_drive(self, fid):
+        # fahrt, bewertungen und reservierungen löschen müssen zusammen passieren damit rollback funzen kann
+        # curs = self.conn.cursor()
+        # curs.execute("delete from Reservieren where fahrt=?", (fid,))
+        # curs.execute("delete from Bewertung where beid in (select bewertung from FINAL TABLE (delete from schreiben where fahrt=?))", (fid,))
+        # curs.execute("delete from fahrt where fid=?", (fid,))
+        pass

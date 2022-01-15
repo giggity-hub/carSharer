@@ -1,7 +1,10 @@
 from aifc import Error
+from ast import Try
+from cmath import log
 from datetime import date
 from typing import final
 from flask import Flask, request, render_template, redirect, url_for, flash
+from stores.bookingstore import BookingStore
 from stores.driveStore import DriveStore
 import user
 import connect
@@ -84,8 +87,6 @@ def view_driveGet(fahrt_id):
         return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
                         bewertungen=bewertungen)
 
-# not refactored
-
 
 @app.route("/view_search", methods=["GET"])
 def view_search_get():
@@ -106,62 +107,45 @@ def view_search_post():
     return render_template("view_search.html", fahrten=fahrten)
 
 
-# not refactored
+# Reservieren
 @app.route('/reservieren/<fahrt_id>', methods=['POST'])
 def view_drive_reservieren(fahrt_id):
-    Anzahl_Plaetze = request.form.get("Anzahl_Plaetze")
-    print(Anzahl_Plaetze)
-    # Reserviere die aktuelle Fahrt, inkrementiere die Reservierung, Schalte nach Bedarf den Status um
-    try:
-        conn = connect.DBUtil().getExternalConnection()
-        curs = conn.cursor()
-        curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
-        fahrt = curs.fetchone()
+    with BookingStore() as bs, driveStore.DriveStore() as ds:
+    
+        fahrt = ds.get_drive(fahrt_id)
+        uid = current_user.getID()
+        anzahl_plaetze = int(request.form["anzahl_plaetze"])
 
-        PreparedStatement = f"""insert into Reservieren 
-                            values ('{current_user.getID()}','{fahrt_id}','{Anzahl_Plaetze}')"""
-        curs.execute(PreparedStatement)
+        try:
+            assert fahrt['status'] == 'offen', "Geschlossene Fahrten können nicht reserviert werden"
+            assert anzahl_plaetze in [1, 2], "Es dürfen nur 1 oder 2 Plätze reserviert werden"
+            assert anzahl_plaetze <= int(fahrt['freiePlaetze']), "Es dürfen nicht mehr Plätze reserviert werden als offen sind"
+            assert int(fahrt["anbieter"]) != int(uid), "Sie sind der Anbieter dieser Fahrt und dürfen diese nicht reservieren"
+            assert not bs.has_user_booked_drive(uid, fahrt_id), "Sie haben für diese Fahrt bereits eine reservierung vorgenommen"
+        except AssertionError as error_message:
+            flash(str(error_message), "error")
+            return redirect("/view_drive/" + str(fahrt_id))
 
-    except Exception as e:
-        print(e)
-    print(f"{fahrt}")
-    return render_template('view_drive.html', fahrt=fahrt_id)
+        bs.book_drive(current_user.getID(), fahrt_id, anzahl_plaetze)
+        return redirect(f'/view_drive/{fahrt_id}')
+
+# not refactored
 
 
 @app.route('/delete/<fahrt_id>', methods=['POST'])
 def view_drive_delete(fahrt_id):
-    # Lösche die aktuelle Reservierung, dekrementiere Reservierung um die Anzahl belegter Plätze, schalte den Status
-    try:
-        conn = connect.DBUtil().getExternalConnection()
-        curs = conn.cursor()
-        curs.execute(f"select * from fahrt where fid='{fahrt_id}'")
-        fahrt = curs.fetchone()
 
-        PreparedStatement = f"""delete from Reservieren
-                                where Fahrt=({fahrt_id})"""
-        curs.execute(PreparedStatement)
-    except Exception as e:
-        print(e)
-    print(f"{fahrt}")
-    return redirect(url_for(view_driveGet) + f"/{fahrt_id}")
+    with DriveStore() as ds:
+        fahrt = ds.get_drive(fahrt_id)
+        uid = current_user.getID()
 
+        if int(fahrt['anbieter']) != int(uid):
+            flash("Sie sind nicht der Anbieter und daher nicht berechtigt diese Fahrt zu löschen", "error")
+            return redirect("/view_drive/" + str(fahrt_id))
 
-# @app.route('/hello', methods=['GET'])
-# def helloGet():
-#     return render_template('hello.html', users=userList)
-
-
-# @app.route('/hello', methods=['POST'])
-# def helloPost():
-#     firstname = request.form.get('firstname')
-#     lastname = request.form.get('lastname')
-#     return f"{firstname}, {lastname}"
-
-#     # if firstname is not None and lastname is not None and firstname and lastname:
-#     #     with threading.Lock():
-#     #         userList.append(user.User(firstname, lastname))
-
-#     # return render_template('hello.html', users=userList)
+        # delete funzt noch nicht
+        ds.delete_drive(fahrt_id)
+        return redirect('view_main')
 
 
 @app.route('/carSharer', methods=['GET'])

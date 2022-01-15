@@ -78,28 +78,27 @@
     <hr style="border-color: green;">
     <div class = "row">
         <h1>Aktionsleiste</h1>
-        <div class="col-md-5">
-            <label for="" class="form-label">Anzahl Plätze für Reservierung</label>
-            <select class="form-select" aria-label=".form-select-sm example" name="Anzahl_Plaetze" required>
-                <option value=1>1</option>
-                <option value=2>2</option>
-            </select>
+        <form method="post" action="/reservieren/{{fahrt["fid"]}}">
+            <input type="number" min=1 max=2 name="anzahl_plaetze" required>
+            <button type="submit"  class="btn btn-primary">Fahrt reservieren</button>
+            
+        </form>
+        <form action="/delete/{{fahrt["fid"]}}" method="post">
+            <button type="submit" class="btn btn-danger" >Fahrt löschen</button>
+        </form>
+        
 
-        </div>
-        <div class="col-auto me-auto">
-
-        </div>
-        <div class="col-auto">
+        <!-- <div class="col-auto">
             <div class="d-grid gap-2">
 
-                <form action="/reservieren/{{ fahrt_id }}" method="post">
+                <form action="/reservieren/{{fahrt["fid"]}}" method="post">
                     <button type="submit"  class="btn btn-primary">Fahrt reservieren</button>
                 </form>
-                <form action="/delete/{{ fahrt_id }}" method="post">
+                <form action="/delete/{{fahrt["fid"]}}" method="post">
                     <button type="submit" class="btn btn-danger">Fahrt löschen</button>
                 </form>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <hr style="border-color: green;">
