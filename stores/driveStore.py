@@ -1,7 +1,8 @@
 import connect
 from stores.basestore import Store
-from utils import clob2string
-
+from utils import clob2string, tuple2dict
+from flask import abort
+from jpype import JavaException
 
 class DriveStore(Store):
 
@@ -39,3 +40,51 @@ class DriveStore(Store):
             bewertungen.append(bewertung)
             bewertung = curs.fetchone()
         return bewertungen
+
+    def get_avg_rating(self, fid):
+        # Average Rating
+        curs = self.conn.cursor()
+        curs.execute(f"""   select AVG( cast(b.RATING as decimal(4,2))) as Durchschnitt from SCHREIBEN s,
+                                    (select * from BEWERTUNG) b
+                        where s.FAHRT =? and s.BEWERTUNG = b.BEID""", (fid,))
+        durchschnitt_rating = curs.fetchone()
+        try:
+            durchschnitt_rating = round(durchschnitt_rating[0], 2)
+        except TypeError:
+            durchschnitt_rating = 0
+        
+        return durchschnitt_rating
+
+    def get_drive(self, fid):
+        try:
+            curs = self.conn.cursor()
+
+            curs.execute(f"""select f.fid, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
+                                    b.email, t.icon
+                            from fahrt f, benutzer b, transportmittel t
+                            where f.fid=? and b.bid=f.anbieter and t.tid=f.transportmittel """, (fid,))
+            fahrtTupel = curs.fetchone()
+
+            if not fahrtTupel:
+                abort(404)
+
+            print(fahrtTupel)
+            fahrtTupel += (clob2string(fahrtTupel[7]),)
+            columns = ['fid', 'startort', 'zielort', 'fahrtdatumzeit', 'maxPlaetze', 'fahrtkosten', 'status', 'beschreibung', 'email', 'icon', 'beschreibung_string']
+            fahrt = tuple2dict(fahrtTupel, columns)
+            # fahrt["beschreibung_string"] = clob2string(fahrt["beschreibung"])
+
+            # Freie Plaetze
+            curs.execute("""select (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze
+                        from fahrt f, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
+                            from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
+                            GROUP BY FID) tmp
+                        where tmp.fid = f.fid and f.fid=?""", (fid,))
+            fahrt["freiePlaetze"] = curs.fetchone()[0]
+
+            return fahrt
+            
+        except JavaException as e:
+            abort(404)
+
+        

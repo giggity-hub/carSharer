@@ -21,6 +21,13 @@ from utils import *
 current_user = CurrentUser()
 
 # refactored 
+
+# Error 404
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html', title='404'), 404
+
+# View Main
 @app.route("/", methods=["GET"])
 @app.route('/view_main', methods=['GET'])
 def view_mainGet():
@@ -38,7 +45,7 @@ def view_mainGet():
     finally:
         ds.close()
 
-
+# New Rating
 @app.route("/new_rating/<fahrt_id>", methods=["POST"])
 def new_rating_post(fahrt_id):
     rs = ratingstore.RatingStore()
@@ -67,51 +74,29 @@ def new_rating_post(fahrt_id):
         rs.close()
 
 
+# View Drive
+@app.route('/view_drive/<fahrt_id>', methods=['GET'])
+def view_driveGet(fahrt_id):
+
+    with driveStore.DriveStore() as ds:
+        fahrt = ds.get_drive(fahrt_id)
+        durchschnitt_rating = ds.get_avg_rating(fahrt_id)
+        bewertungen = ds.get_bewertungen(fahrt_id)
+        ds.completion()
+        return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
+                        bewertungen=bewertungen)
+
 # not refactored
 
 
 
 
 
-@app.route('/view_drive/<fahrt_id>', methods=['GET'])
-def view_driveGet(fahrt_id):
-    # gette die fahrt zur id und render die in nem passenden template
-    conn = connect.DBUtil().getExternalConnection()
-    curs = conn.cursor()
 
-    columns = 'fid, startort, zielort, fahrtdatumzeit, maxPlaetze, fahrtkosten, status, beschreibung, email, icon'
-    curs.execute(f"""select f.fid, f.startort, f.zielort, f.fahrtdatumzeit, f.maxPlaetze, f.fahrtkosten, f.status, f.beschreibung,
-                            b.email, t.icon
-                    from fahrt f, benutzer b, transportmittel t
-                    where f.fid='{fahrt_id}' and b.bid=f.anbieter and t.tid=f.transportmittel """)
-    fahrtTupel = curs.fetchone()
 
-    fahrt = dict(zip(columns.split(', '), fahrtTupel))
-    fahrt["beschreibung_string"] = clob2string(fahrt["beschreibung"])
 
-    # freie plätze berechnen
-    curs.execute("""select (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze
-                    from fahrt f, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
-                        from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
-                        GROUP BY FID) tmp
-                    where tmp.fid = f.fid and f.fid=?""", (fahrt["fid"],))
-    fahrt["freiePlaetze"] = curs.fetchone()[0]
 
-    #  average rating getten
-    curs.execute(f"""   select AVG( cast(b.RATING as decimal(4,2))) as Durchschnitt from SCHREIBEN s,
-                                    (select * from BEWERTUNG) b
-                        where s.FAHRT = {fahrt_id} and s.BEWERTUNG = b.BEID""")
-    durchschnitt_rating = curs.fetchone()
-    try:
-        durchschnitt_rating = round(durchschnitt_rating[0], 2)
-    except TypeError:
-        durchschnitt_rating = 0
 
-    with driveStore.DriveStore() as ds:
-        bewertungen = ds.get_bewertungen(fahrt_id)
-
-    return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
-                           bewertungen=bewertungen)
 
 
 @app.route('/reservieren/<fahrt_id>', methods=['POST'])
