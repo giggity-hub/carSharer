@@ -100,7 +100,10 @@ def view_search_post():
     ziel = request.form.get("Ziel").upper()
     datum = request.form.get("Datum")
 
-    print((not start and ziel) or (start and not ziel))
+    # print((not start and ziel) or (start and not ziel))
+    if not(start and ziel and datum):
+        flash("Startort Zielort und Datum müssen angegeben werden", "error")
+        return redirect("/view_search")
 
     # Startort, Zielort, Fahrtkosten und Icon holen:
     with driveStore.DriveStore() as ds:
