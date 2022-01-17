@@ -54,7 +54,7 @@ class DriveStore(Store):
             durchschnitt_rating = round(durchschnitt_rating[0], 2)
         except TypeError:
             durchschnitt_rating = 0
-        
+
         return durchschnitt_rating
 
     def get_drive(self, fid):
@@ -72,7 +72,8 @@ class DriveStore(Store):
 
             print(fahrtTupel)
             fahrtTupel += (clob2string(fahrtTupel[8]),)
-            columns = ['fid', 'anbieter', 'startort', 'zielort', 'fahrtdatumzeit', 'maxPlaetze', 'fahrtkosten', 'status', 'beschreibung', 'email', 'icon', 'beschreibung_string']
+            columns = ['fid', 'anbieter', 'startort', 'zielort', 'fahrtdatumzeit', 'maxPlaetze', 'fahrtkosten',
+                       'status', 'beschreibung', 'email', 'icon', 'beschreibung_string']
             fahrt = tuple2dict(fahrtTupel, columns)
             # fahrt["beschreibung_string"] = clob2string(fahrt["beschreibung"])
 
@@ -85,7 +86,7 @@ class DriveStore(Store):
             fahrt["freiePlaetze"] = curs.fetchone()[0]
 
             return fahrt
-            
+
         except JavaException as e:
             abort(404)
 
@@ -103,14 +104,32 @@ class DriveStore(Store):
                      (f"%{start}%", f"%{ziel}%", date_time_util.html_date_2_DB2DateTime(datum)))
         return curs.fetchall()
 
-
     def delete_drive(self, fid):
-        # fahrt, bewertungen und reservierungen löschen müssen zusammen passieren damit rollback funzen kann
-        # curs = self.conn.cursor()
+        # fahrt, schreiben, bewertungen und reservierungen löschen müssen zusammen passieren damit rollback funzen kann
+        curs = self.conn.cursor()
+
+        # alle Bewertungs-ids für die zu löschende Fahrt holen
+        curs.execute(f"""   select b.BEID
+                            from BEWERTUNG b,
+                                 (select * from SCHREIBEN where FAHRT = {fid}) s
+                            where s.BEWERTUNG = b.BEID""")
+
+        bewertung_ids = []
+        for bewertung in curs.fetchall():
+            bewertung_ids.append(bewertung[0])
+
+        if bewertung_ids:
+            bewertung_ids = str(bewertung_ids).replace("[", "(").replace("]", ")")
+
+            curs.execute(f"delete from SCHREIBEN where FAHRT = ?", (fid, ))
+            curs.execute(f"delete from BEWERTUNG where BEID in {bewertung_ids}")
+
+        curs.execute(f"delete from RESERVIEREN where FAHRT = ?", (fid, ))
+        curs.execute(f"delete from FAHRT where FID = ?", (fid, ))
+
         # curs.execute("delete from Reservieren where fahrt=?", (fid,))
         # curs.execute("delete from Bewertung where beid in (select bewertung from FINAL TABLE (delete from schreiben where fahrt=?))", (fid,))
         # curs.execute("delete from fahrt where fid=?", (fid,))
-        pass
 
     def create_drive(self, startort, zielort, datumzeit, maxPlaetze, kosten, uid, tid, beschreibung):
         curs = self.conn.cursor()

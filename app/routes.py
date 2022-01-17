@@ -1,19 +1,11 @@
 from aifc import Error
-from ast import Try
-from cmath import log
 from datetime import date
-from typing import final
 from flask import Flask, request, render_template, redirect, url_for, flash
 from stores.bookingstore import BookingStore
 from stores.driveStore import DriveStore
 from stores.vehiclestore import VehicleStore
-import user
-import connect
-# from connect import DBUtil
-from userStore import UserStore
 import stores.driveStore as driveStore
 import stores.ratingstore as ratingstore
-# import userStore
 import re
 from currentUser import CurrentUser
 import date_time_util
@@ -23,12 +15,14 @@ from jpype import JavaException
 
 current_user = CurrentUser()
 
-# refactored 
+
+# refactored
 
 # Error 404
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html', title='404'), 404
+
 
 # View Main
 @app.route("/", methods=["GET"])
@@ -47,6 +41,7 @@ def view_mainGet():
         print(e)
     finally:
         ds.close()
+
 
 # New Rating
 @app.route("/new_rating/<fahrt_id>", methods=["POST"])
@@ -77,22 +72,23 @@ def new_rating_post(fahrt_id):
     finally:
         rs.close()
 
+
 # View Drive
 @app.route('/view_drive/<fahrt_id>', methods=['GET'])
 def view_driveGet(fahrt_id):
-
     with driveStore.DriveStore() as ds:
         fahrt = ds.get_drive(fahrt_id)
         durchschnitt_rating = ds.get_avg_rating(fahrt_id)
         bewertungen = ds.get_bewertungen(fahrt_id)
         ds.completion()
         return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
-                        bewertungen=bewertungen)
+                               bewertungen=bewertungen)
 
 
 @app.route("/view_search", methods=["GET"])
 def view_search_get():
     return render_template("view_search.html")
+
 
 @app.route("/view_search", methods=["POST"])
 def view_search_post():
@@ -101,7 +97,7 @@ def view_search_post():
     datum = request.form.get("Datum")
 
     # print((not start and ziel) or (start and not ziel))
-    if not(start and ziel and datum):
+    if not (start and ziel and datum):
         flash("Startort Zielort und Datum müssen angegeben werden", "error")
         return redirect("/view_search")
 
@@ -116,7 +112,7 @@ def view_search_post():
 @app.route('/reservieren/<fahrt_id>', methods=['POST'])
 def view_drive_reservieren(fahrt_id):
     with BookingStore() as bs, driveStore.DriveStore() as ds:
-    
+
         fahrt = ds.get_drive(fahrt_id)
         uid = current_user.getID()
         anzahl_plaetze = int(request.form["anzahl_plaetze"])
@@ -124,15 +120,20 @@ def view_drive_reservieren(fahrt_id):
         try:
             assert fahrt['status'] == 'offen', "Geschlossene Fahrten können nicht reserviert werden"
             assert anzahl_plaetze in [1, 2], "Es dürfen nur 1 oder 2 Plätze reserviert werden"
-            assert anzahl_plaetze <= int(fahrt['freiePlaetze']), "Es dürfen nicht mehr Plätze reserviert werden als offen sind"
-            assert int(fahrt["anbieter"]) != int(uid), "Sie sind der Anbieter dieser Fahrt und dürfen diese nicht reservieren"
-            assert not bs.has_user_booked_drive(uid, fahrt_id), "Sie haben für diese Fahrt bereits eine reservierung vorgenommen"
+            assert anzahl_plaetze <= int(
+                fahrt['freiePlaetze']), "Es dürfen nicht mehr Plätze reserviert werden als offen sind"
+            assert int(fahrt["anbieter"]) != int(
+                uid), "Sie sind der Anbieter dieser Fahrt und dürfen diese nicht reservieren"
+            assert not bs.has_user_booked_drive(uid,
+                                                fahrt_id), "Sie haben für diese Fahrt bereits eine reservierung vorgenommen"
         except AssertionError as error_message:
             flash(str(error_message), "error")
             return redirect("/view_drive/" + str(fahrt_id))
 
         bs.book_drive(current_user.getID(), fahrt_id, anzahl_plaetze)
+        flash("Die Fahrt wurde erfolgreich reserviert", "info")
         return redirect(f'/view_drive/{fahrt_id}')
+
 
 @app.route("/new_drive", methods=["GET"])
 def new_drive_get():
@@ -140,7 +141,6 @@ def new_drive_get():
         transportmittel = vs.get_vehicles()
         today = date.today()
         return render_template("new_drive.html", transportmittel=transportmittel, today=today)
-
 
 
 @app.route("/new_drive", methods=["POST"])
@@ -158,7 +158,7 @@ def new_drive_post():
     with DriveStore() as ds:
         try:
             assert zielort, "Zielort darf nicht leer sein"
-            assert startort, "Startort darf nicht leer sein" 
+            assert startort, "Startort darf nicht leer sein"
             assert maxPlaetze.isnumeric(), "Anzahl an Plätzen muss eine positive Zahl sein"
             assert int(maxPlaetze) > 0 and int(maxPlaetze) <= 10, "Die Anzahl an Plätzen muss zwischen 1 und 10 liegen"
             assert kosten.isnumeric(), "Die Fahrtkosten müssen eine positive Ganzzahl sein"
@@ -166,10 +166,10 @@ def new_drive_post():
             assert len(beschreibung) <= 50, "Die Länge der Beschreibung darf maximal 50 Zeichen lang sein"
 
             ds.create_drive(
-                startort, 
-                zielort, 
+                startort,
+                zielort,
                 date_time_util.html_date_time_2_DB2DateTime(datum, zeit),
-                maxPlaetze, 
+                maxPlaetze,
                 kosten,
                 current_user.getID(),
                 transportmittel,
@@ -185,16 +185,18 @@ def new_drive_post():
             flash("Allgemein Fehler mit der Datenbank.", "error")
             return redirect(url_for("new_drive_get"))
 
+
 @app.route("/new_rating/<fahrt_id>", methods=["GET"])
 def new_rating_get(fahrt_id):
     return render_template("new_rating.html")
+
 
 # not refactored
 
 
 @app.route('/delete/<fahrt_id>', methods=['POST'])
 def view_drive_delete(fahrt_id):
-
+    # checken ob der User auch der Anbieter der Fahrt ist
     with DriveStore() as ds:
         fahrt = ds.get_drive(fahrt_id)
         uid = current_user.getID()
@@ -203,14 +205,14 @@ def view_drive_delete(fahrt_id):
             flash("Sie sind nicht der Anbieter und daher nicht berechtigt diese Fahrt zu löschen", "error")
             return redirect("/view_drive/" + str(fahrt_id))
 
-        # delete funzt noch nicht
         ds.delete_drive(fahrt_id)
-        return redirect('view_main')
+        flash("Fahrt wurde gelöscht", "info")
+        return redirect(url_for('view_mainGet'))
 
 
-
-
-
+@app.route("/bonus", methods=["GET"])
+def bonus():
+    return render_template("bonus.html")
 
 
 config = csv_reader("properties.settings")
