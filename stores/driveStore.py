@@ -57,6 +57,28 @@ class DriveStore(Store):
 
         return durchschnitt_rating
 
+    def get_id_max_avg_rating(self):
+        # Maximum Average Rating
+        curs = self.conn.cursor()
+        curs.execute(""" select Dbwt.anbieter from (
+                            select tmp.fid, tmp.anbieter, avg(cast(tmp.rating as decimal(10,5))) as Durchschnitt
+                            from (select f.fid, f.anbieter, b.rating
+                            from Fahrt f, schreiben s, bewertung b
+                            where fid=s.fahrt and s.benutzer=b.beid)tmp
+                            group by tmp.fid, tmp.anbieter) Dbwt
+                            """)
+        Bester_Fahrer = curs.fetchone()
+        return Bester_Fahrer
+
+    def get_open_drives_users(self, user_id):
+        curs = self.conn.cursor()
+        curs.execute("""select f.anbieter, f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
+                            from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
+                                                                from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
+                                                                GROUP BY FID) tmp
+                            where f.anbieter=? and tmp.fid =f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""", (user_id,))
+        return curs.fetchall()
+
     def get_drive(self, fid):
         try:
             curs = self.conn.cursor()

@@ -212,7 +212,10 @@ def view_drive_delete(fahrt_id):
 
 @app.route("/bonus", methods=["GET"])
 def bonus():
-    return render_template("bonus.html")
+    with driveStore.DriveStore() as ds:
+        bester_fahrer = ds.get_id_max_avg_rating()
+        beste_offene_fahrten = ds.getDrivesForUser(bester_fahrer)
+    return render_template("bonus.html", beste_offene_fahrten=beste_offene_fahrten)
 
 
 config = csv_reader("properties.settings")

@@ -7,4 +7,37 @@
     <h4 class="text-center mb-3">Fahrer: {Hier kommt der Fahrer rein}</h4>
     <h4>Durchschnittsrating: {Average rating}</h4>
 
+
+<h1>Offene Fahrten</h1>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for fahrt in beste_offene_fahrten %}
+            <div class="col">
+                <div class="card">
+                    <a href="/view_drive/{{ fahrt[0] }}">
+                        <img src={{ fahrt[1] }} class="card-img-top">
+                    </a>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Von</div>
+                            <div>{{ fahrt[2] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Nach</div>
+                            <div>{{ fahrt[3] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Freie Plätze</div>
+                            <div>{{ fahrt[4] }}</div>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>Fahrtkosten</div>
+                            <div>{{ fahrt[5] }}</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
 {% endblock %}
