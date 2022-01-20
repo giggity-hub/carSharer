@@ -1,6 +1,6 @@
 from aifc import Error
 from datetime import date
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, abort
 from stores.bookingstore import BookingStore
 from stores.driveStore import DriveStore
 from stores.vehiclestore import VehicleStore
@@ -46,31 +46,29 @@ def view_mainGet():
 # New Rating
 @app.route("/new_rating/<fahrt_id>", methods=["POST"])
 def new_rating_post(fahrt_id):
-    rs = ratingstore.RatingStore()
-    try:
-        bewertung = request.form.get("bewertungstext")
-        rating = request.form.get("rating")
 
-        # Inut Validation
-        assert bewertung, "Die Bewertung darf nicht leer sein!"
-        assert rating, "Rating darf nicht leer sein"
-        assert rs.userHasNotRated(current_user.getID(),
-                                  fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
+    with ratingstore.RatingStore() as rs, DriveStore() as ds:
+        try:
+            bewertung = request.form.get("bewertungstext")
+            rating = request.form.get("rating")
+            driveExists = ds.get_drive(fahrt_id)
 
-        rs.addRating(current_user.getID(), fahrt_id, bewertung, rating)
-        rs.completion()
-        flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
-        return redirect("/view_drive/" + str(fahrt_id))
+            # Inut Validation
+            assert driveExists, "Diese Fahrt existiert nicht"
+            assert bewertung, "Die Bewertung darf nicht leer sein!"
+            assert rating, "Rating darf nicht leer sein"
+            assert rs.userHasNotRated(current_user.getID(),
+                                    fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
 
-    except AssertionError as error_message:
-        flash(str(error_message), "error")
-        return redirect("/view_drive/" + str(fahrt_id))
+            rs.addRating(current_user.getID(), fahrt_id, bewertung, rating)
+            rs.completion()
+            flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
+            return redirect("/view_drive/" + str(fahrt_id))
 
-    except Error as e:
-        pass
+        except AssertionError as error_message:
+            flash(str(error_message), "error")
+            return redirect("/view_drive/" + str(fahrt_id))
 
-    finally:
-        rs.close()
 
 
 # View Drive
@@ -188,7 +186,11 @@ def new_drive_post():
 
 @app.route("/new_rating/<fahrt_id>", methods=["GET"])
 def new_rating_get(fahrt_id):
-    return render_template("new_rating.html")
+    with DriveStore() as ds:
+        driveExists = ds.get_drive(fahrt_id)
+        if not driveExists:
+                abort(404)
+        return render_template("new_rating.html")
 
 
 # not refactored
