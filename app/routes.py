@@ -1,6 +1,6 @@
 from aifc import Error
 from datetime import date
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, abort
 from stores.bookingstore import BookingStore
 from stores.driveStore import DriveStore
 from stores.vehiclestore import VehicleStore
@@ -12,6 +12,7 @@ import date_time_util
 from app import app
 from utils import *
 from jpype import JavaException
+from jaydebeapi import DatabaseError
 
 current_user = CurrentUser()
 
@@ -46,31 +47,31 @@ def view_mainGet():
 # New Rating
 @app.route("/new_rating/<fahrt_id>", methods=["POST"])
 def new_rating_post(fahrt_id):
-    rs = ratingstore.RatingStore()
-    try:
-        bewertung = request.form.get("bewertungstext")
-        rating = request.form.get("rating")
 
-        # Inut Validation
-        assert bewertung, "Die Bewertung darf nicht leer sein!"
-        assert rating, "Rating darf nicht leer sein"
-        assert rs.userHasNotRated(current_user.getID(),
-                                  fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
+    with ratingstore.RatingStore() as rs, DriveStore() as ds:
+        try:
+            bewertung = request.form.get("bewertungstext")
+            rating = request.form.get("rating")
+            driveExists = ds.get_drive(fahrt_id)
 
-        rs.addRating(current_user.getID(), fahrt_id, bewertung, rating)
-        rs.completion()
-        flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
-        return redirect("/view_drive/" + str(fahrt_id))
+            # Inut Validation
+            assert driveExists, "Diese Fahrt existiert nicht"
+            assert bewertung, "Die Bewertung darf nicht leer sein!"
+            assert rating, "Rating darf nicht leer sein"
+            assert rs.userHasNotRated(current_user.getID(),
+                                    fahrt_id), "Sie haben für diese Fahrt bereits eine Bewertung abgegeben"
 
-    except AssertionError as error_message:
-        flash(str(error_message), "error")
-        return redirect("/view_drive/" + str(fahrt_id))
+            rs.addRating(current_user.getID(), fahrt_id, bewertung, rating)
+            rs.completion()
+            flash("Die Bewertung wurde erfolgreich hinzugefügt", "info")
+            return redirect("/view_drive/" + str(fahrt_id))
 
-    except Error as e:
-        pass
-
-    finally:
-        rs.close()
+        except AssertionError as error_message:
+            flash(str(error_message), "error")
+            return redirect("/view_drive/" + str(fahrt_id))
+        except DatabaseError:
+            flash("Allgemein Fehler mit der Datenbank.", "error")
+            return redirect("/view_drive/" + str(fahrt_id))
 
 
 # View Drive
@@ -80,7 +81,7 @@ def view_driveGet(fahrt_id):
         fahrt = ds.get_drive(fahrt_id)
         durchschnitt_rating = ds.get_avg_rating(fahrt_id)
         bewertungen = ds.get_bewertungen(fahrt_id)
-        ds.completion()
+
         return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
                                bewertungen=bewertungen)
 
@@ -104,8 +105,7 @@ def view_search_post():
     # Startort, Zielort, Fahrtkosten und Icon holen:
     with driveStore.DriveStore() as ds:
         fahrten = ds.get_search_request(start, ziel, datum)
-
-    return render_template("view_search.html", fahrten=fahrten)
+        return render_template("view_search.html", fahrten=fahrten)
 
 
 # Reservieren
@@ -128,6 +128,9 @@ def view_drive_reservieren(fahrt_id):
                                                 fahrt_id), "Sie haben für diese Fahrt bereits eine reservierung vorgenommen"
         except AssertionError as error_message:
             flash(str(error_message), "error")
+            return redirect("/view_drive/" + str(fahrt_id))
+        except DatabaseError:
+            flash("Allgemein Fehler mit der Datenbank.", "error")
             return redirect("/view_drive/" + str(fahrt_id))
 
         bs.book_drive(current_user.getID(), fahrt_id, anzahl_plaetze)
@@ -181,14 +184,18 @@ def new_drive_post():
         except AssertionError as error_message:
             flash(str(error_message), "error")
             return redirect("/new_drive")
-        except JavaException as e:
+        except DatabaseError:
             flash("Allgemein Fehler mit der Datenbank.", "error")
             return redirect(url_for("new_drive_get"))
 
 
 @app.route("/new_rating/<fahrt_id>", methods=["GET"])
 def new_rating_get(fahrt_id):
-    return render_template("new_rating.html")
+    with DriveStore() as ds:
+        driveExists = ds.get_drive(fahrt_id)
+        if not driveExists:
+                abort(404)
+        return render_template("new_rating.html")
 
 
 # not refactored
