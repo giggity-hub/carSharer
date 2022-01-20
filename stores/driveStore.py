@@ -39,8 +39,9 @@ class DriveStore(Store):
         #  alle Bewertungen zu der Fahrt getten
         curs.execute("""   select ben.EMAIL, bew.TEXTNACHRICHT, bew.RATING from SCHREIBEN s,
                                               (select EMAIL, BID from BENUTZER) ben,
-                                              (select BEID, TEXTNACHRICHT, RATING from BEWERTUNG) bew
-                                where s.FAHRT =? and s.BENUTZER = ben.BID and s.BEWERTUNG = bew.BEID""", (fahrt_id,))
+                                              (select BEID, TEXTNACHRICHT, RATING, ERSTELLUNGSDATUM from BEWERTUNG) bew
+                                where s.FAHRT =? and s.BENUTZER = ben.BID and s.BEWERTUNG = bew.BEID
+                                order by bew.ERSTELLUNGSDATUM desc """, (fahrt_id,))
 
         # Alle CLOBs in Strings umwandeln.
         bewertungen = []
