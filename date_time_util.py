@@ -75,7 +75,7 @@ def html_date_2_DB2DateTime(html_date):
         print(e)
     return datetime_str
 
-def check_date_validity(d):
+def isFutureDate(d):
     parsed_date = datetime.strptime(d, "%Y-%m-%d").date()
     today = date.today()
     return parsed_date >= today
@@ -87,6 +87,6 @@ if __name__ == "__main__":
     print(extractTimeFromDB2DateTimeString("2022-02-02 08:00:00.000000"))
     print(convertDateAndTimeToDB2DateTime("15.04.2022", "12:15"))
     print(html_date_time_2_DB2DateTime("2022-01-07","10:30"))
-    print(check_date_validity("2022-01-06"))
+    print(isFutureDate("2022-01-06"))
     print(html_date_2_DB2DateTime("2022-01-06"))
 

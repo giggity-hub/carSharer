@@ -165,7 +165,7 @@ def new_drive_post():
             assert maxPlaetze.isnumeric(), "Anzahl an Plätzen muss eine positive Zahl sein"
             assert int(maxPlaetze) > 0 and int(maxPlaetze) <= 10, "Die Anzahl an Plätzen muss zwischen 1 und 10 liegen"
             assert kosten.isnumeric(), "Die Fahrtkosten müssen eine positive Ganzzahl sein"
-            assert date_time_util.check_date_validity(datum), "Das eingegebene Datum liegt in der Vergangenheit."
+            assert date_time_util.isFutureDate(datum), "Das eingegebene Datum liegt in der Vergangenheit."
             assert len(beschreibung) <= 50, "Die Länge der Beschreibung darf maximal 50 Zeichen lang sein"
 
             ds.create_drive(
