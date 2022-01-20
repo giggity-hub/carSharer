@@ -70,43 +70,43 @@ class DriveStore(Store):
         # Maximum Average Rating
         curs = self.conn.cursor()
         curs.execute(""" select * from
-                        (select anbieter
-                        from
-                        (select tmp2.anbieter, AVG(tmp2.durchschnitt) as nutzer_schnitt
-                        from(select tmp.fahrt, tmp.anbieter, AVG( cast(tmp.RATING as decimal(4,2))) as Durchschnitt
-                        from (select *
-                        from
-                        (select s.benutzer, s.fahrt, b.beid, b.rating
-                        from Schreiben s join Bewertung b
-                        on s.bewertung = b.beid
-                        order by s.fahrt) t join
-                        (select fid, anbieter
-                        from fahrt
-                        order by fid) f
-                        on f.fid=t.fahrt
-                        order by anbieter) tmp
-                        group by tmp.fahrt, tmp.anbieter) tmp2
-                        group by tmp2.anbieter) tmp5
-                        inner join
-                        (select max(tmp3.nutzer_schnitt) as Megamaximum
-                        from (select tmp2.anbieter, AVG(tmp2.durchschnitt) as nutzer_schnitt
-                        from(select tmp.fahrt, tmp.anbieter, AVG( cast(tmp.RATING as decimal(4,2))) as Durchschnitt
-                        from (select *
-                        from
-                        (select s.benutzer, s.fahrt, b.beid, b.rating
-                        from Schreiben s join Bewertung b
-                        on s.bewertung = b.beid
-                        order by s.fahrt) t join
-                        (select fid, anbieter
-                        from fahrt
-                        order by fid) f
-                        on f.fid=t.fahrt
-                        order by anbieter) tmp
-                        group by tmp.fahrt, tmp.anbieter) tmp2
-                        group by tmp2.anbieter) tmp3) tmp4
-                        on tmp4.Megamaximum = tmp5.nutzer_schnitt) final
-                        join Benutzer b2
-                        on final.ANBIETER=b2.BID
+                            (select *
+                            from
+                            (select tmp2.anbieter, AVG(tmp2.durchschnitt) as nutzer_schnitt
+                            from(select tmp.fahrt, tmp.anbieter, AVG( cast(tmp.RATING as decimal(4,2))) as Durchschnitt
+                            from (select *
+                            from
+                            (select s.benutzer, s.fahrt, b.beid, b.rating
+                            from Schreiben s join Bewertung b
+                            on s.bewertung = b.beid
+                            order by s.fahrt) t join
+                            (select fid, anbieter
+                            from fahrt
+                            order by fid) f
+                            on f.fid=t.fahrt
+                            order by anbieter) tmp
+                            group by tmp.fahrt, tmp.anbieter) tmp2
+                            group by tmp2.anbieter) tmp5
+                            inner join
+                            (select max(tmp3.nutzer_schnitt) as Megamaximum
+                            from (select tmp2.anbieter, AVG(tmp2.durchschnitt) as nutzer_schnitt
+                            from(select tmp.fahrt, tmp.anbieter, AVG( cast(tmp.RATING as decimal(4,2))) as Durchschnitt
+                            from (select *
+                            from
+                            (select s.benutzer, s.fahrt, b.beid, b.rating
+                            from Schreiben s join Bewertung b
+                            on s.bewertung = b.beid
+                            order by s.fahrt) t join
+                            (select fid, anbieter
+                            from fahrt
+                            order by fid) f
+                            on f.fid=t.fahrt
+                            order by anbieter) tmp
+                            group by tmp.fahrt, tmp.anbieter) tmp2
+                            group by tmp2.anbieter) tmp3) tmp4
+                            on tmp4.Megamaximum = tmp5.nutzer_schnitt) final
+                            join Benutzer b2
+                            on final.ANBIETER=b2.BID
 """)
         Bester_Fahrer = curs.fetchone()
         return Bester_Fahrer
