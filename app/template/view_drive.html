@@ -8,7 +8,7 @@
 <div class = "container">
     <div class ="container">
         <h1>Informationen</h1>
-
+        <img src="/{{fahrt["icon"]}}" class="">
         <div class="row">
             <div class="col-md-6">
                 <label for="" class="form-label">Anbieter:</label>
@@ -70,7 +70,11 @@
                 <label for="" class="form-label">Beschreibung: </label>
             </div>
             <div class="col-md-6">
-                <label for="" class="form-label">{{ fahrt["beschreibung_string"]}}</label>
+                {% if fahrt["beschreibung_string"] %}
+                    <p for="" class="form-label">{{ fahrt["beschreibung_string"]}}</p>
+                {% else %}
+                    <p class="text-muted">Keine Bewertung vorhanden</p>
+                {% endif %}
             </div>
         </div>
 
