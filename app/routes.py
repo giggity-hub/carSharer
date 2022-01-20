@@ -12,6 +12,7 @@ import date_time_util
 from app import app
 from utils import *
 from jpype import JavaException
+from jaydebeapi import DatabaseError
 
 current_user = CurrentUser()
 
@@ -68,7 +69,9 @@ def new_rating_post(fahrt_id):
         except AssertionError as error_message:
             flash(str(error_message), "error")
             return redirect("/view_drive/" + str(fahrt_id))
-
+        except DatabaseError:
+            flash("Allgemein Fehler mit der Datenbank.", "error")
+            return redirect("/view_drive/" + str(fahrt_id))
 
 
 # View Drive
@@ -78,7 +81,7 @@ def view_driveGet(fahrt_id):
         fahrt = ds.get_drive(fahrt_id)
         durchschnitt_rating = ds.get_avg_rating(fahrt_id)
         bewertungen = ds.get_bewertungen(fahrt_id)
-        ds.completion()
+
         return render_template('view_drive.html', fahrt=fahrt, durchschnitt_rating=durchschnitt_rating,
                                bewertungen=bewertungen)
 
@@ -102,8 +105,7 @@ def view_search_post():
     # Startort, Zielort, Fahrtkosten und Icon holen:
     with driveStore.DriveStore() as ds:
         fahrten = ds.get_search_request(start, ziel, datum)
-
-    return render_template("view_search.html", fahrten=fahrten)
+        return render_template("view_search.html", fahrten=fahrten)
 
 
 # Reservieren
@@ -126,6 +128,9 @@ def view_drive_reservieren(fahrt_id):
                                                 fahrt_id), "Sie haben für diese Fahrt bereits eine reservierung vorgenommen"
         except AssertionError as error_message:
             flash(str(error_message), "error")
+            return redirect("/view_drive/" + str(fahrt_id))
+        except DatabaseError:
+            flash("Allgemein Fehler mit der Datenbank.", "error")
             return redirect("/view_drive/" + str(fahrt_id))
 
         bs.book_drive(current_user.getID(), fahrt_id, anzahl_plaetze)
@@ -179,7 +184,7 @@ def new_drive_post():
         except AssertionError as error_message:
             flash(str(error_message), "error")
             return redirect("/new_drive")
-        except JavaException as e:
+        except DatabaseError:
             flash("Allgemein Fehler mit der Datenbank.", "error")
             return redirect(url_for("new_drive_get"))
 
