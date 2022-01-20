@@ -214,8 +214,10 @@ def view_drive_delete(fahrt_id):
 def bonus():
     with driveStore.DriveStore() as ds:
         bester_fahrer = ds.get_id_max_avg_rating()
-        beste_offene_fahrten = ds.getDrivesForUser(bester_fahrer)
-    return render_template("bonus.html", beste_offene_fahrten=beste_offene_fahrten)
+        beste_offene_fahrten = ds.get_open_drives_users(bester_fahrer[0])
+        print(beste_offene_fahrten)
+        print(bester_fahrer)
+    return render_template("bonus.html", beste_offene_fahrten=beste_offene_fahrten, bester_fahrer=bester_fahrer)
 
 
 config = csv_reader("properties.settings")

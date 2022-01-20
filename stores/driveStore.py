@@ -19,10 +19,19 @@ class DriveStore(Store):
     def getOpenDrives(self):
         curs = self.conn.cursor()
         curs.execute("""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
-                    from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
+                            from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
                                                         from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
                                                         GROUP BY FID) tmp
-                    where tmp.fid = f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""")
+                            where tmp.fid = f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""")
+        return curs.fetchall()
+
+    def get_open_drives_users(self, user_id):
+        curs = self.conn.cursor()
+        curs.execute("""select f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten, f.status, f.anbieter
+                            from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
+                                                                from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
+                                                                GROUP BY FID) tmp
+                            where f.anbieter=? and tmp.fid =f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""", (user_id,))
         return curs.fetchall()
 
     def get_bewertungen(self, fahrt_id):
@@ -60,24 +69,47 @@ class DriveStore(Store):
     def get_id_max_avg_rating(self):
         # Maximum Average Rating
         curs = self.conn.cursor()
-        curs.execute(""" select Dbwt.anbieter from (
-                            select tmp.fid, tmp.anbieter, avg(cast(tmp.rating as decimal(10,5))) as Durchschnitt
-                            from (select f.fid, f.anbieter, b.rating
-                            from Fahrt f, schreiben s, bewertung b
-                            where fid=s.fahrt and s.benutzer=b.beid)tmp
-                            group by tmp.fid, tmp.anbieter) Dbwt
-                            """)
+        curs.execute(""" select * from
+                        (select anbieter
+                        from
+                        (select tmp2.anbieter, AVG(tmp2.durchschnitt) as nutzer_schnitt
+                        from(select tmp.fahrt, tmp.anbieter, AVG( cast(tmp.RATING as decimal(4,2))) as Durchschnitt
+                        from (select *
+                        from
+                        (select s.benutzer, s.fahrt, b.beid, b.rating
+                        from Schreiben s join Bewertung b
+                        on s.bewertung = b.beid
+                        order by s.fahrt) t join
+                        (select fid, anbieter
+                        from fahrt
+                        order by fid) f
+                        on f.fid=t.fahrt
+                        order by anbieter) tmp
+                        group by tmp.fahrt, tmp.anbieter) tmp2
+                        group by tmp2.anbieter) tmp5
+                        inner join
+                        (select max(tmp3.nutzer_schnitt) as Megamaximum
+                        from (select tmp2.anbieter, AVG(tmp2.durchschnitt) as nutzer_schnitt
+                        from(select tmp.fahrt, tmp.anbieter, AVG( cast(tmp.RATING as decimal(4,2))) as Durchschnitt
+                        from (select *
+                        from
+                        (select s.benutzer, s.fahrt, b.beid, b.rating
+                        from Schreiben s join Bewertung b
+                        on s.bewertung = b.beid
+                        order by s.fahrt) t join
+                        (select fid, anbieter
+                        from fahrt
+                        order by fid) f
+                        on f.fid=t.fahrt
+                        order by anbieter) tmp
+                        group by tmp.fahrt, tmp.anbieter) tmp2
+                        group by tmp2.anbieter) tmp3) tmp4
+                        on tmp4.Megamaximum = tmp5.nutzer_schnitt) final
+                        join Benutzer b2
+                        on final.ANBIETER=b2.BID
+""")
         Bester_Fahrer = curs.fetchone()
         return Bester_Fahrer
-
-    def get_open_drives_users(self, user_id):
-        curs = self.conn.cursor()
-        curs.execute("""select f.anbieter, f.fid, t.icon, f.startort, f.zielort, (f.maxPlaetze - tmp.belegtePlaetze) as freiePlaetze, f.fahrtkosten
-                            from fahrt f, transportmittel t, (select coalesce(sum(ANZPLAETZE),0) as belegtePlaetze, FID
-                                                                from FAHRT left join RESERVIEREN R on FAHRT.FID = R.FAHRT
-                                                                GROUP BY FID) tmp
-                            where f.anbieter=? and tmp.fid =f.fid and t.tid = f.transportmittel and f.STATUS = 'offen'""", (user_id,))
-        return curs.fetchall()
 
     def get_drive(self, fid):
         try:
