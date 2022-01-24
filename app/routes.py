@@ -1,4 +1,3 @@
-from aifc import Error
 from datetime import date
 from flask import Flask, request, render_template, redirect, url_for, flash, abort
 from stores.bookingstore import BookingStore
@@ -11,7 +10,6 @@ from currentUser import CurrentUser
 import date_time_util
 from app import app
 from utils import *
-from jpype import JavaException
 from jaydebeapi import DatabaseError
 
 current_user = CurrentUser()
