@@ -19,20 +19,8 @@ class Store(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.complete = True
-        if self.conn is not None:
-            try:
-                if self.complete:
-                    self.conn.commit()
-                else:
-                    self.conn.rollback()
-            except Exception as e:
-                print(e)
-            finally:
-                try:
-                    self.conn.close()
-                except Exception as e:
-                    print(e)
+        self.completion()
+        self.close()
 
     # PREPARED STATEMENT (WITH PLACEHOLDERS)
     # def addUser(self, userToAdd):
